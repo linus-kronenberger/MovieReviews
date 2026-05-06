@@ -1,0 +1,13 @@
+logging:
+    level:
+        org:
+            atmosphere: warn
+server:
+    port: ${PORT:8080}
+spring:
+    mustache:
+        check-template-location: false
+vaadin:
+    frontend:
+        hotdeploy: true
+    launch-browser: true
