@@ -1,4 +1,8 @@
 package com.linus.application.backend.movie.infrastructure;
 
-public class MovieRepository {
+import org.springframework.data.repository.PagingAndSortingRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface MovieRepository extends PagingAndSortingRepository<Movie, Long> {
 }
