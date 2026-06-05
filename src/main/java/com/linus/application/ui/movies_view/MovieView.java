@@ -34,8 +34,10 @@ public class MovieView extends VerticalLayout {
         filterField.setValueChangeMode(ValueChangeMode.LAZY);
 
         Grid<Movie> movieGrid = new Grid<>();
-        movieGrid.addColumn(Movie::getTitle).setHeader("Titel")
-                .setSortProperty("movie_id");
+        movieGrid.addColumn(Movie::getTitle)
+            .setHeader("Titel")
+            .setSortable(true)
+            .setSortProperty("title");
         movieGrid.addColumn(Movie::getDescription).setHeader("Beschreibung")
                 .setSortProperty("description");
 

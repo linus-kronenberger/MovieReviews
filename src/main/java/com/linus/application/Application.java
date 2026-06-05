@@ -1,6 +1,8 @@
 package com.linus.application;
 
+import com.vaadin.flow.component.page.BodySize;
 import com.vaadin.flow.theme.Theme;
+import com.vaadin.flow.theme.aura.Aura;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -18,7 +20,7 @@ import com.vaadin.flow.theme.lumo.Lumo;
  */
 @SpringBootApplication
 @PWA(name = "Project Base for Vaadin with Spring", shortName = "Project Base")
-@StyleSheet(Lumo.STYLESHEET)
+@StyleSheet(Aura.STYLESHEET)
 @StyleSheet("styles.css")
 public class Application implements AppShellConfigurator {
 

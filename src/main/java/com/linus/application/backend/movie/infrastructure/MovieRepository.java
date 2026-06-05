@@ -1,8 +1,9 @@
 package com.linus.application.backend.movie.infrastructure;
 
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface MovieRepository extends PagingAndSortingRepository<Movie, Long> {
+public interface MovieRepository extends PagingAndSortingRepository<Movie, Long>, JpaSpecificationExecutor<Movie> {
 }

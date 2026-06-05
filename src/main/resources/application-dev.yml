@@ -1,16 +1,19 @@
-logging:
-    level:
-        org:
-            atmosphere: warn
 server:
-    port: ${PORT:8080}
+    # If APPLICATION_PORT in .env use it, otherwise it's 8080.
+    port: ${APPLICATION_PORT:8080}
+
 spring:
+    jpa:
+        defer-datasource-initialization: true
+    sql:
+        init:
+            mode: always
     mustache:
         check-template-location: false
     datasource:
         url: jdbc:h2:mem:mydb
-        username: sa
-        password: password
+        username: ${DB_USERNAME:user}
+        password: ${DB_PASSWORD:password}
         driverClassName: org.h2.Driver
         jpa:
             database-platform: org.hibernate.dialect.H2Dialect
