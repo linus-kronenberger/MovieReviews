@@ -1,6 +1,8 @@
 server:
-    # If APPLICATION_PORT in .env use it, otherwise it's 8080.
     port: ${APPLICATION_PORT:8080}
+    servlet:
+        session:
+            tracking-modes: cookie
 
 spring:
     jpa:
@@ -19,6 +21,11 @@ spring:
             database-platform: org.hibernate.dialect.H2Dialect
             defer-datasource-initialization: true
 vaadin:
+    allowed-packages: com.vaadin,org.vaadin,dev.hilla,com.linus.application
     frontend:
         hotdeploy: true
     launch-browser: true
+
+jwt:
+    auth:
+        secret: ${JWT_AUTH_SECRET:J6GOtcwC2NJI1l0VkHu20PacPFGTxpirBxWwynoHjsc=}

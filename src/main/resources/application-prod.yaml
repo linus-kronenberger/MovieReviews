@@ -1,1 +1,36 @@
-# todo: add postgresql
+server:
+  port: ${APPLICATION_PORT:8080}
+
+spring:
+  jpa:
+    defer-datasource-initialization: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  sql:
+    init:
+      mode: always
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:moviereviews}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  mustache:
+    check-template-location: false
+
+vaadin:
+  allowed-packages: com.vaadin,org.vaadin,dev.hilla,com.linus.application
+  frontend:
+    hotdeploy: false
+  launch-browser: false
+
+server:
+  servlet:
+    session:
+      tracking-modes: cookie
+
+jwt:
+  auth:
+    secret: ${JWT_AUTH_SECRET}
