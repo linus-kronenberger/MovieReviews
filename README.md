@@ -1,99 +1,59 @@
-# Project Base for Vaadin and Spring Boot
+# MovieReviews
 
-This project can be used as a starting point to create your own Vaadin application with Spring Boot.
-It contains all the necessary configuration and some placeholder files to get you started.
+Persönliche Web-App zum Bewerten und Reviewen von Filmen – ideal für den großen Marvel-Marathon.
 
-The best way to create your own project based on this starter is [start.vaadin.com](https://start.vaadin.com/) - you can get only the necessary parts and choose the package naming you want to use.
+Mit dieser App kannst du Filme anlegen, nach Kategorien (Story, Acting, Visuals) mit 1–10 Sternen bewerten, Essays schreiben und alle Bewertungen auf einen Blick sehen.
 
-## Running the Application
-There are two ways to run the application :  using `mvn spring-boot:run` or by running the `Application` class directly from your IDE.
+## Technologie-Stack
 
-You can use any IDE of your preference,but we suggest Eclipse or Intellij IDEA.
-Below are the configuration details to start the project using a `spring-boot:run` command. Both Eclipse and Intellij IDEA are covered.
+- **Vaadin 25** (Java Full-Stack, kein REST/SPA – das Backend rendert die UI)
+- **Spring Boot 4** (Java 25)
+- **H2** in Entwicklung, **PostgreSQL** in Produktion
+- **Maven Wrapper**
 
-#### Eclipse
-- Right click on a project folder and select `Run As` --> `Maven build..` . After that a configuration window is opened.
-- In the window set the value of the **Goals** field to `spring-boot:run` 
-- You can optionally select `Skip tests` checkbox
-- All the other settings can be left to default
+## Schnellstart (Entwicklung)
 
-Once configurations are set clicking `Run` will start the application
-
-#### Intellij IDEA
-- On the right side of the window, select Maven --> Plugins--> `spring-boot` --> `spring-boot:run` goal
-- Optionally, you can disable tests by clicking on a `Skip Tests mode` blue button.
-
-Clicking on the green run button will start the application.
-
-After the application has started, you can view your it at http://localhost:8080/ in your browser.
-
-
-If you want to run the application locally in the production mode, use `package` and `java -jar target/spring-skeleton-1.0-SNAPSHOT.jar` commands instead.
-### Running Integration Tests
-
-Integration tests are implemented using [Vaadin TestBench](https://vaadin.com/testbench). The tests take a few minutes to run and are therefore included in a separate Maven profile. We recommend running tests with a production build to minimize the chance of development time toolchains affecting test stability. To run the tests using Google Chrome, execute
-
-`mvn verify -Pit`
-
-and make sure you have a valid TestBench license installed.
-
-Profile `it` adds the following parameters to run integration tests:
 ```sh
--Dwebdriver.chrome.driver=path_to_driver
--Dcom.vaadin.testbench.Parameters.runLocally=chrome
+./mvnw spring-boot:run
 ```
 
-If you would like to run a separate test make sure you have added these parameters to VM Options of JUnit run configuration
+Die App ist dann unter [http://localhost:8080](http://localhost:8080) erreichbar.  
+Es werden automatisch 100 Marvel-Filme in die H2-In-Memory-Datenbank geladen.
 
-### Live Reload (optional)
+## Produktion mit Docker
 
-With live reload, you can see the results of your code changes immediately. 
-When you edit your Java code and recompile it, the application changes will be automatically reloaded and the browser is refreshed.
-This is done by leveraging [Spring Boot Developer Tools](https://docs.spring.io/spring-boot/docs/2.1.5.RELEASE/reference/html/using-boot-devtools.html). 
-To be able to see the changes in the browser tab, the page still needs to be reloaded. 
-That can also  be automated via a LiveReload browser extension. 
-One such extension for Google Chrome is [LiveReload](https://chrome.google.com/webstore/detail/livereload/jnihajbhpnppcggbcgedagnkighmdlei). 
-In Firefox, [LiveReload - Web extension](https://addons.mozilla.org/en-US/firefox/addon/livereload-web-extension/) can be used.
-You can find such similar extensions for other major browsers too.
-These extensions add an icon to your browser next to the address bar.
-To enable the extension, you should click that icon after you opened your application. 
+```sh
+docker compose up -d
+```
 
-You can find more information at [Live Reload in Spring Boot Applications](https://vaadin.com/docs/flow/workflow/tutorial-spring-boot-live-reload.html) document.
+Startet PostgreSQL 16 und die App (Port 8080). Alle Werte sind über Umgebungsvariablen konfigurierbar:
 
-## Structure
+| Variable | Default | Beschreibung |
+|---|---|---|
+| `DB_HOST` | `localhost` | PostgreSQL Host |
+| `DB_PORT` | `5432` | PostgreSQL Port |
+| `DB_NAME` | `moviereviews` | Datenbankname |
+| `DB_USERNAME` | `postgres` | DB-Benutzer |
+| `DB_PASSWORD` | `postgres` | DB-Passwort |
+| `APPLICATION_PORT` | `8080` | App-Port |
 
-Vaadin web applications are full-stack and include both client-side and server-side code in the same project.
+## Features
 
-| Directory                                  | Description |
-|:-------------------------------------------| :--- |
-| `src/main/frontend/`                       | Client-side source directory |
-| &nbsp;&nbsp;&nbsp;&nbsp;`index.html`       | HTML template |
-| &nbsp;&nbsp;&nbsp;&nbsp;`index.ts`         | Frontend entrypoint |
-| &nbsp;&nbsp;&nbsp;&nbsp;`main-layout.ts`   | Main layout Web Component (optional) |
-| &nbsp;&nbsp;&nbsp;&nbsp;`views/`           | UI views Web Components (TypeScript / HTML) |
-| &nbsp;&nbsp;&nbsp;&nbsp;`styles/`          | Styles directory (CSS) |
-| `src/main/java/<groupId>/`                 | Server-side source directory |
-| &nbsp;&nbsp;&nbsp;&nbsp;`Application.java` | Server entrypoint |
-| &nbsp;&nbsp;&nbsp;&nbsp;`AppShell.java`    | application-shell configuration |
+- **Filmliste** (`/`) – Übersicht aller Filme mit Filter, Sortierung und Klick für Bewertungs-Detail
+- **Neue Bewertung** (`/add-rating`) – Film auswählen, Kategorie wählen, Sterne vergeben, Essay schreiben und speichern
+- **Film anlegen** – direkt auf der Filmliste per Titel- und Beschreibungsfeld
 
-## Code Formatting
+## Projektstruktur
 
-The project includes the Spotless code formatter.
-
-To use it in IntelliJ, install the [https://plugins.jetbrains.com/plugin/22455-spotless-applier](IntelliJ plugin)
-To use it in VS Code, install the [https://marketplace.visualstudio.com/items?itemName=richardwillis.vscode-spotless-gradle ](VS Code extension)
-To use it from the command line, run `mvn spotless:apply`
-
-## Useful links
-
-- Read the documentation at [vaadin.com/docs](https://vaadin.com/docs).
-- Follow the tutorials at [vaadin.com/tutorials](https://vaadin.com/tutorials).
-- Watch training videos and get certified at [vaadin.com/learn/training](https://vaadin.com/learn/training).
-- Create new projects at [start.vaadin.com](https://start.vaadin.com/).
-- Search UI components and their usage examples at [vaadin.com/components](https://vaadin.com/components).
-- View use case applications that demonstrate Vaadin capabilities at [vaadin.com/examples-and-demos](https://vaadin.com/examples-and-demos).
-- Discover Vaadin's set of CSS utility classes that enable building any UI without custom CSS in the [docs](https://vaadin.com/docs/latest/ds/foundation/utility-classes). 
-- Find a collection of solutions to common use cases in [Vaadin Cookbook](https://cookbook.vaadin.com/).
-- Find Add-ons at [vaadin.com/directory](https://vaadin.com/directory).
-- Ask questions on [Stack Overflow](https://stackoverflow.com/questions/tagged/vaadin) or join our [Discord channel](https://discord.gg/MYFq5RTbBn).
-- Report issues, create pull requests in [GitHub](https://github.com/vaadin/platform).
+```
+com.linus.application
+  Application.java               # @SpringBootApplication
+  ui.MainLayout                  # App Shell mit Drawer-Navigation
+  ui.movies_view.MovieView       # Filmliste (lazy Grid)
+  ui.movies_view.popup.MoviePopUp # Bewertungs-Dialog
+  ui.add_rating_view.AddRatingView # Bewertung anlegen
+  backend.movie.infrastructure   # Movie-Entity, Repository, Service
+  backend.rating.infrastructure  # Rating/RatingCategory-Entity, Repository, Service
+  backend.essay.infrastructure   # Essay-Entity, Repository
+  backend.user.infrastructure    # User-Entity (vorbereitet)
+```
