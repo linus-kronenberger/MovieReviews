@@ -11,9 +11,12 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
 import com.vaadin.flow.component.textfield.TextField;
+import com.linus.application.ui.MainLayout;
 import com.vaadin.flow.router.Route;
+import jakarta.annotation.security.RolesAllowed;
 
-@Route("/add-rating")
+@Route(value = "add-rating", layout = MainLayout.class)
+@RolesAllowed({"USER", "ADMIN"})
 public class AddRatingView extends VerticalLayout {
 
     private final MovieService movieService;
