@@ -27,4 +27,35 @@ public class Rating {
     @Min(1)
     private Integer stars;
 
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public Movie getMovie() {
+        return movie;
+    }
+
+    public void setMovie(Movie movie) {
+        this.movie = movie;
+    }
+
+    public RatingCategory getCategory() {
+        return category;
+    }
+
+    public void setCategory(RatingCategory category) {
+        this.category = category;
+    }
+
+    public Integer getStars() {
+        return stars;
+    }
+
+    public void setStars(Integer stars) {
+        this.stars = stars;
+    }
 }
