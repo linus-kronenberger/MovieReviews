@@ -4,11 +4,13 @@ import com.vaadin.flow.data.provider.QuerySortOrder;
 import com.vaadin.flow.data.provider.SortDirection;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -26,6 +28,20 @@ public class MovieService {
             return movieRepository.findAll(pageable);
         }
         return movieRepository.findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(filterValue, filterValue, pageable);
+    }
+
+    @Transactional
+    public Movie saveMovie(String title, String description) {
+        Movie movie = new Movie();
+        movie.setTitle(title);
+        movie.setDescription(description);
+        return movieRepository.save(movie);
+    }
+
+    public List<Movie> getAllMoviesList() {
+        List<Movie> movies = new ArrayList<>();
+        movieRepository.findAll(Sort.unsorted()).forEach(movies::add);
+        return movies;
     }
 
     private Sort toSort(List<QuerySortOrder> sortOrders) {
