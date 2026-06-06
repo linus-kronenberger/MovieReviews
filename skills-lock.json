@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "github-research": {
+      "source": "lingzhi227/agent-research-skills",
+      "sourceType": "github",
+      "skillPath": "skills/github-research/SKILL.md",
+      "computedHash": "e2fc4df5a6cbbf008732a416a8bb7103c8986d9b83f78fa1ea3296f8259ab8e0"
+    },
     "gitlab-cli-skills": {
       "source": "vince-winkintel/gitlab-cli-skills",
       "sourceType": "github",
