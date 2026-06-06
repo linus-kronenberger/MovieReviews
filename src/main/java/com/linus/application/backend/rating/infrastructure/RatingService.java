@@ -3,8 +3,8 @@ package com.linus.application.backend.rating.infrastructure;
 import com.linus.application.backend.essay.infrastructure.Essay;
 import com.linus.application.backend.essay.infrastructure.EssayRepository;
 import com.linus.application.backend.movie.infrastructure.Movie;
-import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -37,6 +37,16 @@ public class RatingService {
         }
 
         return rating;
+    }
+
+    @Transactional(readOnly = true)
+    public List<Rating> getRatingsByMovie(Movie movie) {
+        return ratingRepository.findByMovie(movie);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Essay> getEssaysByRatings(List<Rating> ratings) {
+        return essayRepository.findByRatingIn(ratings);
     }
 
     public List<RatingCategory> getAllCategories() {
