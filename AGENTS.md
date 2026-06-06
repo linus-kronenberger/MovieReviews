@@ -82,6 +82,7 @@ return repo.findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
 
 - No comments in code
 - No emojis
+- Never commit or push — the user does that manually
 - Package-by-feature: `backend.{domain}.infrastructure`, `backend.{domain}.api`, `ui.{view}`
 - Use `@Transactional` on service methods that read/write
 - Tables use `snake_case` column names with `@Column(name = "...")`
