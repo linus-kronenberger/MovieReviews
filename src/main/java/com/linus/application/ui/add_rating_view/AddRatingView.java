@@ -7,7 +7,7 @@ import com.vaadin.flow.router.Route;
 @Route("/add-rating")
 public class AddRatingView extends VerticalLayout {
     public AddRatingView() {
-      H1 h1 = new H1("Add Rating");
+      H1 h1 = new H1("Bewertung Hinzufügen");
 
       add(h1);
     }

@@ -1,0 +1,87 @@
+# AGENTS.md — MovieReviews
+
+## Quick start
+
+```sh
+./mvnw spring-boot:run         # dev server at http://localhost:8080
+./mvnw compile                  # compile only
+./mvnw spotless:apply           # format code
+./mvnw verify -Pit              # integration tests (needs TestBench license)
+```
+
+CI runs `mvn clean package -DskipTests` then `verify -Pit`.
+
+## Stack
+
+- **Vaadin 25.1** (Java full-stack framework, not REST/SPA — backend renders the UI)
+- **Spring Boot 4.0.6** (Java 25)
+- **H2 in-memory** in dev, PostgreSQL planned for prod (stub only so far)
+- **Maven wrapper** — always use `./mvnw`, not a system `mvn`
+
+## Dev profile
+
+Active by default. Key settings in `application-dev.yml`:
+- `defer-datasource-initialization: true` — needed because JPA creates tables before `data.sql` runs
+- `spring.sql.init.mode: always` — `data.sql` runs on every startup
+- Hotdeploy + browser launch enabled
+
+## Project layout
+
+```
+com.linus.application
+  Application.java                         # @SpringBootApplication + AppShellConfigurator
+  ui.MainLayout                            # @Layout — app shell with drawer nav
+  ui.movies_view.MovieView                 # @Route("") — movie grid (lazy-loaded)
+  ui.add_rating_view.AddRatingView         # @Route("/add-rating") — stub
+  backend.movie.infrastructure.Movie*      # Entity, Repository, Service (only non-stub backend)
+  backend.rating.infrastructure.Rating*    # Entities exist, no repositories yet
+  backend.rating.api.RatingController      # Empty stub
+  backend.user.infrastructure.User*        # Entity + Role enum, no repositories
+  backend.essay.infrastructure.Essay       # Entity only
+```
+
+Only `Movie` → `MovieRepository` → `MovieService` is wired end-to-end.
+
+## Database
+
+Tables: `movie`, `rating`, `rating_category`, `users`, `essay`
+- `movie`: movie_id (PK), title, description
+- `rating`: rating_id (PK), movie_id (FK→movie), category_id (FK→rating_category), stars (1–10)
+- `data.sql` seeds 100 Marvel movies on every start
+
+## Vaadin Grid + backend sorting/filtering
+
+`MovieView` uses lazy `setItems(query -> ...)` pattern. The callback receives Vaadin's `QuerySortOrder` list and a filter string. Convert correctly:
+
+```java
+// Service
+private Sort toSort(List<QuerySortOrder> sortOrders) {
+    if (sortOrders == null || sortOrders.isEmpty()) return Sort.unsorted();
+    return Sort.by(sortOrders.stream()
+        .map(o -> new Sort.Order(
+            o.getDirection() == SortDirection.ASCENDING
+                ? Sort.Direction.ASC : Sort.Direction.DESC,
+            o.getSorted()))
+        .toList());
+}
+
+if (filterValue == null || filterValue.isBlank())
+    return repo.findAll(pageable);
+return repo.findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
+    filterValue, filterValue, pageable);
+```
+
+## Route structure
+
+| Path           | View            | Status |
+|----------------|-----------------|--------|
+| `/`            | MovieView       | working |
+| `/add-rating`  | AddRatingView   | stub   |
+
+## Code style
+
+- No comments in code
+- No emojis
+- Package-by-feature: `backend.{domain}.infrastructure`, `backend.{domain}.api`, `ui.{view}`
+- Use `@Transactional` on service methods that read/write
+- Tables use `snake_case` column names with `@Column(name = "...")`
