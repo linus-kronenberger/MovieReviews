@@ -1,0 +1,21 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "vaadin": {
+      "type": "remote",
+      "url": "https://mcp.vaadin.com/docs"
+    },
+    "gitlab": {
+      "type": "local",
+      "command": ["npx", "-y", "@zereight/gitlab-mcp"],
+      "enabled": false,
+      "env": {
+        "GITLAB_TOKEN": "{env:GITLAB_TOKEN}",
+        "GITLAB_PROJECT_ID": "LinusK4566/MovieReviews"
+      }
+    }
+  },
+  "skills": {
+    "paths": [".opencode/skills"]
+  }
+}
