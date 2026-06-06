@@ -11,6 +11,12 @@
 
 CI runs `mvn clean package -DskipTests` then `verify -Pit`.
 
+## Vaadin MCP reference
+
+When writing Vaadin code, use the Vaadin MCP server (`opencode.json` → `mcp.vaadin`) as a reference for API docs, component usage, and framework conventions.
+
+For GitLab operations (MRs, issues, pipelines, etc.), use the gitlab-mcp-skill loaded from `.opencode/skills/gitlab-mcp/SKILL.md` and the GitLab MCP server (`opencode.json` → `mcp.gitlab`). Set `GITLAB_TOKEN` and `GITLAB_PROJECT_ID` in your environment.
+
 ## Stack
 
 - **Vaadin 25.1** (Java full-stack framework, not REST/SPA — backend renders the UI)
