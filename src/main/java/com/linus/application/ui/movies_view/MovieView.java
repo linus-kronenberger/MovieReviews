@@ -27,7 +27,7 @@ public class MovieView extends VerticalLayout {
     public MovieView(MovieService movieService) {
         this.movieService = movieService;
         // Define DOM
-        H1 h1 = new H1("Movies");
+        H1 h1 = new H1("Filme");
 
         TextField filterField = new TextField();
         filterField.setPlaceholder("Filter");
