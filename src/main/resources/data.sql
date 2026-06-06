@@ -1,3 +1,18 @@
+INSERT INTO users(username, name, password_hash, role)
+VALUES ('user', 'John Normal',
+'$2a$10$xdbKoM48VySZqVSU/cSlVeJn0Z04XCZ7KZBjUBC00eKo5uLswyOpe',
+'USER');
+
+INSERT INTO users(username, name, password_hash, role)
+VALUES ('admin', 'Emma Powerful',
+'$2a$10$jpLNVNeA7Ar/ZQ2DKbKCm.MuT2ESe.Qop96jipKMq7RaUgCoQedV.',
+'ADMIN');
+
+INSERT INTO rating_category(category, description)
+VALUES ('Story', 'Bewertung der Handlung und des Drehbuchs'),
+       ('Acting', 'Bewertung der schauspielerischen Leistung'),
+       ('Visuals', 'Bewertung der visuellen Effekte und Kinematographie');
+
 INSERT INTO movie(title, description)
 VALUES ('Iron Man', 'The film that started the MCU'),
 ('The Incredible Hulk', 'Bruce Banner transforms into the Hulk'),
