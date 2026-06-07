@@ -16,7 +16,7 @@ ssh "$VM_USER@$VM_IP" "
   if [ ! -d .git ]; then
     echo 'Repo not found on VM — cloning ...'
     cd ~
-    git clone https://github.com/linuskronenberger/MovieReviews.git
+    git clone git@gitlab.com:LinusK4566/MovieReviews.git
     cd ~/MovieReviews
   else
     git pull

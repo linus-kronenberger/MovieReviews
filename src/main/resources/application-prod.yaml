@@ -31,4 +31,4 @@ vaadin:
 
 jwt:
   auth:
-    secret: ${JWT_AUTH_SECRET}
+    secret: ${JWT_AUTH_SECRET:J6GOtcwC2NJI1l0VkHu20PacPFGTxpirBxWwynoHjsc=}
