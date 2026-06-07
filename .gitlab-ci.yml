@@ -1,0 +1,22 @@
+stages:
+  - deploy
+
+deploy:
+  stage: deploy
+  image: alpine:latest
+  before_script:
+    - apk add --no-cache openssh-client git
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H "$VM_HOST" >> ~/.ssh/known_hosts
+  script:
+    - ssh "$VM_USER@$VM_HOST" "
+        cd ~/MovieReviews &&
+        git pull &&
+        docker compose up --build -d &&
+        docker image prune -f
+      "
+  only:
+    - main
