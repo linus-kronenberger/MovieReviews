@@ -13,6 +13,9 @@ deploy:
     - ssh-keyscan -H "$VM_HOST" >> ~/.ssh/known_hosts
   script:
     - ssh "$VM_USER@$VM_HOST" "
+        if [ ! -d ~/MovieReviews/.git ]; then
+          git clone https://github.com/linuskronenberger/MovieReviews.git ~/MovieReviews
+        fi &&
         cd ~/MovieReviews &&
         git pull &&
         docker compose up --build -d &&
