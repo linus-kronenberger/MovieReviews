@@ -4,13 +4,15 @@ import com.linus.application.backend.movie.infrastructure.Movie;
 import com.linus.application.backend.movie.infrastructure.MovieService;
 import com.linus.application.backend.rating.infrastructure.RatingCategory;
 import com.linus.application.backend.rating.infrastructure.RatingService;
+import com.linus.application.backend.user.infrastructure.User;
+import com.linus.application.security.AuthenticatedUser;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
-import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.slider.Slider;
 import com.linus.application.ui.MainLayout;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.RolesAllowed;
@@ -21,15 +23,18 @@ public class AddRatingView extends VerticalLayout {
 
     private final MovieService movieService;
     private final RatingService ratingService;
+    private final AuthenticatedUser authenticatedUser;
 
     private final ComboBox<Movie> movieCombo = new ComboBox<>("Film");
     private final ComboBox<RatingCategory> categoryCombo = new ComboBox<>("Kategorie");
-    private final TextField starsField = new TextField("Sterne (1-10)");
+    private final Slider starsSlider = new Slider("Sterne");
     private final TextArea essayArea = new TextArea("Essay");
 
-    public AddRatingView(MovieService movieService, RatingService ratingService) {
+    public AddRatingView(MovieService movieService, RatingService ratingService,
+                         AuthenticatedUser authenticatedUser) {
         this.movieService = movieService;
         this.ratingService = ratingService;
+        this.authenticatedUser = authenticatedUser;
 
         H1 h1 = new H1("Bewertung Hinzufügen");
 
@@ -37,20 +42,26 @@ public class AddRatingView extends VerticalLayout {
         movieCombo.setItemLabelGenerator(Movie::getTitle);
         movieCombo.setWidthFull();
 
-        categoryCombo.setItems(ratingService.getAllCategories());
+        User currentUser = authenticatedUser.get().orElse(null);
+        if (currentUser != null) {
+            categoryCombo.setItems(ratingService.getCategoriesByUser(currentUser));
+        }
         categoryCombo.setItemLabelGenerator(RatingCategory::getCategory);
         categoryCombo.setWidthFull();
 
-        starsField.setWidthFull();
-        starsField.setPattern("[1-9]|10");
-        starsField.setAllowedCharPattern("[0-9]");
-        starsField.setErrorMessage("Bitte eine Zahl zwischen 1 und 10 eingeben");
+        starsSlider.setMin(1);
+        starsSlider.setMax(10);
+        starsSlider.setStep(1);
+        starsSlider.setValue(5.0);
+        starsSlider.setMinMaxVisible(true);
+        starsSlider.setValueAlwaysVisible(true);
+        starsSlider.setWidthFull();
 
         essayArea.setWidthFull();
 
         Button saveButton = new Button("Speichern", event -> save());
 
-        add(h1, movieCombo, categoryCombo, starsField, essayArea, saveButton);
+        add(h1, movieCombo, categoryCombo, starsSlider, essayArea, saveButton);
     }
 
     private void save() {
@@ -64,23 +75,15 @@ public class AddRatingView extends VerticalLayout {
             Notification.show("Bitte wählen Sie eine Kategorie aus");
             return;
         }
-        String starsText = starsField.getValue();
-        if (starsText == null || starsText.isBlank()) {
-            Notification.show("Bitte geben Sie eine Sternebewertung ein");
-            return;
-        }
-        Integer stars = Integer.parseInt(starsText);
-        if (stars < 1 || stars > 10) {
-            Notification.show("Die Sternebewertung muss zwischen 1 und 10 liegen");
-            return;
-        }
+
+        int stars = (int) Math.round(starsSlider.getValue());
 
         ratingService.saveRating(movie, category, stars, essayArea.getValue());
         Notification.show("Bewertung gespeichert!");
 
         movieCombo.clear();
         categoryCombo.clear();
-        starsField.clear();
+        starsSlider.setValue(5.0);
         essayArea.clear();
     }
 }
