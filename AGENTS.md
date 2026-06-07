@@ -17,6 +17,15 @@ When writing Vaadin code, use the Vaadin MCP server (`opencode.json` → `mcp.va
 
 For GitLab operations (MRs, issues, pipelines, etc.), use the gitlab-mcp-skill loaded from `.opencode/skills/gitlab-mcp/SKILL.md` and the GitLab MCP server (`opencode.json` → `mcp.gitlab`). Set `GITLAB_TOKEN` and `GITLAB_PROJECT_ID` in your environment.
 
+## GitHub Research skill
+
+Use the github-research skill (loaded from `.agents/skills/github-research/SKILL.md`) when the user:
+- Asks to find repositories for a topic (e.g. "Find repos for multi-agent systems")
+- Wants to analyze open-source code related to a topic
+- Needs to find implementations of a paper or technique
+- Asks which repos implement a specific algorithm
+- Uses the `/github-research <deep-research-output-dir>` slash command
+
 ## Stack
 
 - **Vaadin 25.1** (Java full-stack framework, not REST/SPA — backend renders the UI)
