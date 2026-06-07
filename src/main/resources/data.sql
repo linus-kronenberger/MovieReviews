@@ -4,7 +4,7 @@ VALUES ('user', 'John Normal',
 'USER');
 
 INSERT INTO users(username, name, password_hash, role)
-VALUES ('admin', 'Emma Powerful',
+VALUES ('admin', 'Admin',
 '$2a$10$jpLNVNeA7Ar/ZQ2DKbKCm.MuT2ESe.Qop96jipKMq7RaUgCoQedV.',
 'ADMIN');
 
