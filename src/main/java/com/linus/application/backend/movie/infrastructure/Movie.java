@@ -19,8 +19,9 @@ public class Movie {
     @Column(name = "imdb_id")
     private String imdbId;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "type")
-    private String type;
+    private MovieType type;
 
     public Long getId() {
         return id;
@@ -54,11 +55,11 @@ public class Movie {
         this.imdbId = imdbId;
     }
 
-    public String getType() {
+    public MovieType getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(MovieType type) {
         this.type = type;
     }
 }
