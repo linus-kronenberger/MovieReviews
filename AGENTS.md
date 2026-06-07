@@ -91,7 +91,43 @@ return repo.findByTitleContainingIgnoreCaseOrDescriptionContainingIgnoreCase(
 | Path           | View            | Status |
 |----------------|-----------------|--------|
 | `/`            | MovieView       | working |
-| `/add-rating`  | AddRatingView   | stub   |
+| `/add-rating`  | AddRatingView   | working |
+
+## Production deploy (docker)
+
+```sh
+./mvnw package -DskipTests && java -jar target/*.jar --spring.profiles.active=prod
+# or via docker-compose:
+docker compose up --build -d
+```
+
+### VM-Voraussetzungen
+
+- Docker Engine + Docker Compose (Plugin)
+- Git
+- Port 8080 in der Firewall freigegeben
+- Repository als `~/MovieReviews` geklont
+- SSH-Key für `git pull` (z. B. Deploy-Key) oder öffentliches Repo
+
+### GitHub Actions (`.github/workflows/deploy.yml`)
+
+Erwartet Secrets: `VM_HOST`, `VM_USER`, `SSH_PRIVATE_KEY`.  
+Läuft bei Push auf `main` oder manuell via `workflow_dispatch`.
+
+### Lokales Skript
+
+```sh
+./deploy.sh <ipv4> [ssh-user]
+```
+
+SSHet in die VM, pullt, baut und startet neu.
+
+## Database
+
+Tables: `movie`, `rating`, `rating_category`, `users`, `essay`
+- `movie`: movie_id (PK), title, description
+- `rating`: rating_id (PK), movie_id (FK→movie), category_id (FK→rating_category), stars (1–10)
+- `data.sql` seeds 100 Marvel movies on every start (dev + first prod start)
 
 ## Code style
 
