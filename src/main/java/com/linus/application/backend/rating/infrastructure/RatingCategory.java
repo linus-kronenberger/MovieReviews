@@ -1,5 +1,6 @@
 package com.linus.application.backend.rating.infrastructure;
 
+import com.linus.application.backend.user.infrastructure.User;
 import jakarta.persistence.*;
 
 @Table(name = "rating_category")
@@ -15,6 +16,10 @@ public class RatingCategory {
 
     @Column
     private String description;
+
+    @JoinColumn(name = "user_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    private User user;
 
     public Long getId() {
         return id;
@@ -38,5 +43,13 @@ public class RatingCategory {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }
