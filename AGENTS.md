@@ -20,9 +20,14 @@
 - **GitLab**: `gitlab-mcp-skill` + MCP-Server `opencode.json → mcp.gitlab`; braucht `GITLAB_TOKEN` und `GITLAB_PROJECT_ID`
 - **GitHub Research*: `.agents/skills/github-research/SKILL.md`
 
-## Dev-Team
+## Dev-Team & Workflow
 
 Agents in `.opencode/agents/`:
 - `planer.md` – Architektur & Aufgabenplanung
 - `reviewer.md` – Code-Reviews (read-only)
 - `senior-dev.md` – Implementation (full access)
+
+**Workflow für jedes Feature:**
+1. **Planer** → Anforderung analysieren, Lösung skizzieren, Aufgaben aufteilen
+2. **Senior Dev** → Implementierung nach Plan
+3. **Reviewer** → Fertigen Code reviewen
