@@ -3,6 +3,9 @@ package com.linus.application.backend.rating.infrastructure;
 import com.linus.application.backend.essay.infrastructure.Essay;
 import com.linus.application.backend.essay.infrastructure.EssayRepository;
 import com.linus.application.backend.movie.infrastructure.Movie;
+import com.linus.application.backend.user.infrastructure.User;
+import com.linus.application.security.AuthenticatedUser;
+import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,20 +16,25 @@ public class RatingService {
     private final RatingRepository ratingRepository;
     private final EssayRepository essayRepository;
     private final RatingCategoryRepository ratingCategoryRepository;
+    private final AuthenticatedUser authenticatedUser;
 
     public RatingService(RatingRepository ratingRepository, EssayRepository essayRepository,
-                         RatingCategoryRepository ratingCategoryRepository) {
+                         RatingCategoryRepository ratingCategoryRepository,
+                         AuthenticatedUser authenticatedUser) {
         this.ratingRepository = ratingRepository;
         this.essayRepository = essayRepository;
         this.ratingCategoryRepository = ratingCategoryRepository;
+        this.authenticatedUser = authenticatedUser;
     }
 
     @Transactional
     public Rating saveRating(Movie movie, RatingCategory category, Integer stars, String essayText) {
+        User currentUser = authenticatedUser.get().orElseThrow();
         Rating rating = new Rating();
         rating.setMovie(movie);
         rating.setCategory(category);
         rating.setStars(stars);
+        rating.setUser(currentUser);
         rating = ratingRepository.save(rating);
 
         if (essayText != null && !essayText.isBlank()) {
@@ -49,6 +57,21 @@ public class RatingService {
         return essayRepository.findByRatingIn(ratings);
     }
 
+    @Transactional
+    public void deleteRatingIfRoleAllowed(Set<Rating> ratings) {
+        User currentUser = authenticatedUser.get().orElse(null);
+        if (currentUser == null) return;
+
+        for (Rating rating : ratings) {
+            if (!rating.getUser().getId().equals(currentUser.getId())) continue;
+
+            List<Essay> essays = essayRepository.findByRatingIn(List.of(rating));
+            essayRepository.deleteAll(essays);
+            ratingRepository.delete(rating);
+        }
+    }
+
+    @Transactional(readOnly = true)
     public List<RatingCategory> getAllCategories() {
         return (List<RatingCategory>) ratingCategoryRepository.findAll();
     }
