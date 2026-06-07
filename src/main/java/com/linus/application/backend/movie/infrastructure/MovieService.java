@@ -1,5 +1,7 @@
 package com.linus.application.backend.movie.infrastructure;
 
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 import com.vaadin.flow.data.provider.QuerySortOrder;
 import com.vaadin.flow.data.provider.SortDirection;
 import jakarta.annotation.security.DeclareRoles;
@@ -9,18 +11,25 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class MovieService {
     private final MovieRepository movieRepository;
+    private final ObjectMapper objectMapper;
+    private final HttpClient httpClient;
 
-    public MovieService(MovieRepository movieRepository) {
+    public MovieService(MovieRepository movieRepository, ObjectMapper objectMapper) {
         this.movieRepository = movieRepository;
+        this.objectMapper = objectMapper;
+        this.httpClient = HttpClient.newHttpClient();
     }
 
     @Transactional
@@ -34,11 +43,62 @@ public class MovieService {
 
     @Transactional
     @RolesAllowed("admin")
-    public Movie saveMovie(String title, String description) {
+    public Movie saveMovie(String title, String description, String imdbId, MovieType type) {
+        if (imdbId == null || imdbId.isBlank()) {
+            imdbId = searchImdbId(title);
+        }
         Movie movie = new Movie();
         movie.setTitle(title);
         movie.setDescription(description);
+        movie.setImdbId(imdbId);
+        movie.setType(type);
         return movieRepository.save(movie);
+    }
+
+    public String searchImdbId(String title) {
+        if (title == null || title.isBlank()) return null;
+        try {
+            String encoded = java.net.URLEncoder.encode(title, java.nio.charset.StandardCharsets.UTF_8);
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://api.imdbapi.dev/search/titles?query=" + encoded))
+                    .GET()
+                    .build();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) return null;
+
+            JsonNode root = objectMapper.readTree(response.body());
+            JsonNode titles = root.get("titles");
+            if (titles == null || !titles.isArray() || titles.isEmpty()) return null;
+
+            return titles.get(0).get("id").asText();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public String fetchPosterUrl(String imdbId) {
+        if (imdbId == null || imdbId.isBlank()) return null;
+        try {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create("https://api.imdbapi.dev/titles/" + imdbId + "/images"))
+                    .GET()
+                    .build();
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) return null;
+
+            JsonNode root = objectMapper.readTree(response.body());
+            JsonNode images = root.get("images");
+            if (images == null || !images.isArray()) return null;
+
+            for (JsonNode image : images) {
+                if ("poster".equals(image.get("type").asText())) {
+                    return image.get("url").asText();
+                }
+            }
+        } catch (Exception e) {
+            return null;
+        }
+        return null;
     }
 
     public List<Movie> getAllMoviesList() {
