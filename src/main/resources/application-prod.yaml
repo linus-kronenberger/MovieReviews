@@ -1,5 +1,8 @@
 server:
   port: ${APPLICATION_PORT:8080}
+  servlet:
+    session:
+      tracking-modes: cookie
 
 spring:
   jpa:
@@ -25,11 +28,6 @@ vaadin:
   frontend:
     hotdeploy: false
   launch-browser: false
-
-server:
-  servlet:
-    session:
-      tracking-modes: cookie
 
 jwt:
   auth:
