@@ -16,6 +16,12 @@ public class Movie {
     @Column(name = "description")
     private String description;
 
+    @Column(name = "imdb_id")
+    private String imdbId;
+
+    @Column(name = "type")
+    private String type;
+
     public Long getId() {
         return id;
     }
@@ -38,5 +44,21 @@ public class Movie {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getImdbId() {
+        return imdbId;
+    }
+
+    public void setImdbId(String imdbId) {
+        this.imdbId = imdbId;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
     }
 }
