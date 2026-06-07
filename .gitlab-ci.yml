@@ -19,4 +19,4 @@ deploy:
         docker image prune -f
       "
   only:
-    - main
+    - master
