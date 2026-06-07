@@ -35,12 +35,13 @@ public class ManageCategoriesView extends VerticalLayout {
         descriptionField.setWidthFull();
 
         Button saveButton = new Button("Kategorie erstellen", event -> createCategory());
+        Button deleteButton = new Button("Ausgewählte löschen", event -> deleteSelected());
 
         categoryGrid.addColumn(RatingCategory::getCategory).setHeader("Name").setWidth("200px");
         categoryGrid.addColumn(RatingCategory::getDescription).setHeader("Beschreibung").setWidth("400px");
         refreshGrid();
 
-        add(h1, nameField, descriptionField, saveButton, categoryGrid);
+        add(h1, nameField, descriptionField, saveButton, deleteButton, categoryGrid);
     }
 
     private void createCategory() {
@@ -53,6 +54,14 @@ public class ManageCategoriesView extends VerticalLayout {
         Notification.show("Kategorie erstellt!");
         nameField.clear();
         descriptionField.clear();
+        refreshGrid();
+    }
+
+    private void deleteSelected() {
+        for (RatingCategory category : categoryGrid.getSelectedItems()) {
+            ratingService.deleteCategory(category.getId());
+        }
+        Notification.show("Kategorie(n) gelöscht");
         refreshGrid();
     }
 

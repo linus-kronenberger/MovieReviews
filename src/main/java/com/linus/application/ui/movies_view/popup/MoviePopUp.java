@@ -2,11 +2,13 @@ package com.linus.application.ui.movies_view.popup;
 
 import com.linus.application.backend.essay.infrastructure.Essay;
 import com.linus.application.backend.movie.infrastructure.Movie;
+import com.linus.application.backend.movie.infrastructure.MovieService;
 import com.linus.application.backend.rating.infrastructure.Rating;
 import com.linus.application.backend.rating.infrastructure.RatingService;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
@@ -19,17 +21,30 @@ public class MoviePopUp extends Dialog {
 
     private final Movie movie;
     private final RatingService ratingService;
+    private final MovieService movieService;
     private final VerticalLayout contentLayout = new VerticalLayout();
 
-    public MoviePopUp(Movie movie, RatingService ratingService) {
+    public MoviePopUp(Movie movie, RatingService ratingService, MovieService movieService) {
         this.movie = movie;
         this.ratingService = ratingService;
+        this.movieService = movieService;
 
-        setHeaderTitle("Bewertungen - " + movie.getTitle());
-        setWidth("600px");
+        String typeLabel = movie.getType() != null ? movie.getType().getDisplayName() : "";
+        setHeaderTitle(movie.getTitle() + (typeLabel.isEmpty() ? "" : " (" + typeLabel + ")"));
+        setWidth("650px");
 
         contentLayout.setPadding(false);
         add(contentLayout);
+
+        if (movie.getImdbId() != null && !movie.getImdbId().isBlank()) {
+            String posterUrl = movieService.fetchPosterUrl(movie.getImdbId());
+            if (posterUrl != null) {
+                Image poster = new Image(posterUrl, movie.getTitle() + " Poster");
+                poster.setMaxWidth("100%");
+                poster.setMaxHeight("400px");
+                contentLayout.add(poster);
+            }
+        }
 
         refreshGrid();
 
@@ -46,7 +61,9 @@ public class MoviePopUp extends Dialog {
     private Grid<Rating> grid;
 
     private void refreshGrid() {
-        contentLayout.removeAll();
+        contentLayout.getChildren()
+                .filter(child -> child instanceof Grid || child instanceof Paragraph)
+                .forEach(contentLayout::remove);
 
         List<Rating> ratings = ratingService.getRatingsByMovie(movie);
         List<Essay> essays = ratingService.getEssaysByRatings(ratings);
@@ -54,7 +71,8 @@ public class MoviePopUp extends Dialog {
                 .collect(Collectors.toMap(e -> e.getRating().getId(), Essay::getText));
 
         if (ratings.isEmpty()) {
-            contentLayout.add(new Paragraph("Keine Bewertungen vorhanden."));
+            Paragraph noRatings = new Paragraph("Keine Bewertungen vorhanden.");
+            contentLayout.add(noRatings);
             grid = null;
         } else {
             grid = new Grid<>(Rating.class, false);
