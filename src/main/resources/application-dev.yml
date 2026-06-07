@@ -5,11 +5,9 @@ server:
             tracking-modes: cookie
 
 spring:
-    jpa:
-        defer-datasource-initialization: true
     sql:
         init:
-            mode: always
+            mode: never
     mustache:
         check-template-location: false
     datasource:
