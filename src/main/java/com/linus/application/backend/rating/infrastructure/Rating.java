@@ -2,6 +2,7 @@ package com.linus.application.backend.rating.infrastructure;
 
 import com.linus.application.backend.movie.infrastructure.Movie;
 
+import com.linus.application.backend.user.infrastructure.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -26,6 +27,10 @@ public class Rating {
     @Max(10)
     @Min(1)
     private Integer stars;
+
+    @JoinColumn(name = "user_id")
+    @ManyToOne(fetch = FetchType.LAZY)
+    private User user;
 
     public Long getId() {
         return id;
@@ -57,5 +62,13 @@ public class Rating {
 
     public void setStars(Integer stars) {
         this.stars = stars;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }
