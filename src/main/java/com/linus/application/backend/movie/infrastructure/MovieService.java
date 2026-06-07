@@ -2,6 +2,8 @@ package com.linus.application.backend.movie.infrastructure;
 
 import com.vaadin.flow.data.provider.QuerySortOrder;
 import com.vaadin.flow.data.provider.SortDirection;
+import jakarta.annotation.security.DeclareRoles;
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.transaction.Transactional;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -31,6 +33,7 @@ public class MovieService {
     }
 
     @Transactional
+    @RolesAllowed("admin")
     public Movie saveMovie(String title, String description) {
         Movie movie = new Movie();
         movie.setTitle(title);
