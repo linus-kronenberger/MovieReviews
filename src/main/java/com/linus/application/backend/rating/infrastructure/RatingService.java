@@ -72,7 +72,29 @@ public class RatingService {
     }
 
     @Transactional(readOnly = true)
-    public List<RatingCategory> getAllCategories() {
-        return (List<RatingCategory>) ratingCategoryRepository.findAll();
+    public List<RatingCategory> getCategoriesByUser(User user) {
+        return ratingCategoryRepository.findByUser(user);
+    }
+
+    @Transactional
+    public RatingCategory createCategory(String name, String description) {
+        User currentUser = authenticatedUser.get().orElseThrow();
+        RatingCategory category = new RatingCategory();
+        category.setCategory(name);
+        category.setDescription(description);
+        category.setUser(currentUser);
+        return ratingCategoryRepository.save(category);
+    }
+
+    @Transactional
+    public void deleteCategory(Long categoryId) {
+        User currentUser = authenticatedUser.get().orElse(null);
+        if (currentUser == null) return;
+
+        RatingCategory category = ratingCategoryRepository.findById(categoryId).orElse(null);
+        if (category == null) return;
+        if (!category.getUser().getId().equals(currentUser.getId())) return;
+
+        ratingCategoryRepository.delete(category);
     }
 }
