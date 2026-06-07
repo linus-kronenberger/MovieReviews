@@ -191,11 +191,6 @@
     "@vaadin/select": "25.1.2",
     "@vaadin/master-detail-layout": "25.1.2",
     "@vaadin/confirm-dialog": "25.1.2",
-    "workbox-build": {
-      "serialize-javascript": "7.0.5",
-      "@rollup/plugin-terser": "1.0.0",
-      "glob": "13.0.6"
-    },
     "lit": "$lit",
     "@vaadin/grid": "25.1.2",
     "@vaadin/router": "2.0.1",
@@ -263,6 +258,11 @@
     "@vaadin/rich-text-editor": "25.1.2",
     "@vaadin/vaadin-lumo-styles": "$@vaadin/vaadin-lumo-styles",
     "@vaadin/email-field": "25.1.2",
-    "@vaadin/message-input": "25.1.2"
+    "@vaadin/message-input": "25.1.2",
+    "workbox-build": {
+      "serialize-javascript": "7.0.5",
+      "@rollup/plugin-terser": "1.0.0",
+      "glob": "13.0.6"
+    }
   }
 }
