@@ -7,8 +7,8 @@ import com.linus.application.backend.rating.infrastructure.RatingService;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
-import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Paragraph;
+import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 
 import java.util.List;
@@ -17,31 +17,53 @@ import java.util.stream.Collectors;
 
 public class MoviePopUp extends Dialog {
 
+    private final Movie movie;
+    private final RatingService ratingService;
+    private final VerticalLayout contentLayout = new VerticalLayout();
+
     public MoviePopUp(Movie movie, RatingService ratingService) {
+        this.movie = movie;
+        this.ratingService = ratingService;
+
+        setHeaderTitle("Bewertungen - " + movie.getTitle());
+        setWidth("600px");
+
+        contentLayout.setPadding(false);
+        add(contentLayout);
+
+        refreshGrid();
+
+        Button deleteButton = new Button("Bewertung löschen", e -> {
+            ratingService.deleteRatingIfRoleAllowed(grid.getSelectedItems());
+            refreshGrid();
+            Notification.show("Bewertung gelöscht");
+        });
+
+        Button closeButton = new Button("Schließen", e -> close());
+        getFooter().add(deleteButton, closeButton);
+    }
+
+    private Grid<Rating> grid;
+
+    private void refreshGrid() {
+        contentLayout.removeAll();
+
         List<Rating> ratings = ratingService.getRatingsByMovie(movie);
         List<Essay> essays = ratingService.getEssaysByRatings(ratings);
         Map<Long, String> essayMap = essays.stream()
                 .collect(Collectors.toMap(e -> e.getRating().getId(), Essay::getText));
 
-        setHeaderTitle("Bewertungen - " + movie.getTitle());
-        setWidth("600px");
-
         if (ratings.isEmpty()) {
-            add(new Paragraph("Keine Bewertungen vorhanden."));
+            contentLayout.add(new Paragraph("Keine Bewertungen vorhanden."));
+            grid = null;
         } else {
-            Grid<Rating> grid = new Grid<>();
+            grid = new Grid<>(Rating.class, false);
             grid.setItems(ratings);
             grid.addColumn(r -> r.getCategory().getCategory()).setHeader("Kategorie").setWidth("150px");
             grid.addColumn(Rating::getStars).setHeader("Sterne").setWidth("100px");
             grid.addColumn(r -> essayMap.getOrDefault(r.getId(), "-")).setHeader("Essay").setWidth("350px");
             grid.setAllRowsVisible(true);
-
-            VerticalLayout layout = new VerticalLayout(grid);
-            layout.setPadding(false);
-            add(layout);
+            contentLayout.add(grid);
         }
-
-        Button closeButton = new Button("Schlie\u00dfen", e -> close());
-        getFooter().add(closeButton);
     }
 }
