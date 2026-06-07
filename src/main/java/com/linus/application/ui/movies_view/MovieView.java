@@ -5,11 +5,8 @@ import com.linus.application.backend.movie.infrastructure.MovieService;
 import com.linus.application.backend.rating.infrastructure.RatingService;
 import com.linus.application.ui.MainLayout;
 import com.linus.application.ui.movies_view.popup.MoviePopUp;
-import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.H1;
-import com.vaadin.flow.component.notification.Notification;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.value.ValueChangeMode;
@@ -23,8 +20,6 @@ public class MovieView extends VerticalLayout {
     private final MovieService movieService;
     private final RatingService ratingService;
 
-    private final TextField titleField = new TextField("Titel");
-    private final TextField descriptionField = new TextField("Beschreibung");
     private final Grid<Movie> movieGrid = new Grid<>();
 
     public MovieView(MovieService movieService, RatingService ratingService) {
@@ -32,23 +27,19 @@ public class MovieView extends VerticalLayout {
         this.ratingService = ratingService;
         H1 h1 = new H1("Filme");
 
-        titleField.setWidthFull();
-        descriptionField.setWidthFull();
-
-        Button saveButton = new Button("Speichern", event -> saveMovie());
-        HorizontalLayout formLayout = new HorizontalLayout(titleField, descriptionField, saveButton);
-        formLayout.setWidthFull();
-        formLayout.setAlignItems(Alignment.END);
-
         TextField filterField = new TextField();
         filterField.setPlaceholder("Filter");
         filterField.setValueChangeMode(ValueChangeMode.LAZY);
+
         movieGrid.addColumn(Movie::getTitle)
             .setHeader("Titel")
             .setSortable(true)
             .setSortProperty("title");
         movieGrid.addColumn(Movie::getDescription).setHeader("Beschreibung")
                 .setSortProperty("description");
+        movieGrid.addColumn(m -> m.getType() != null ? m.getType().getDisplayName() : "")
+                .setHeader("Typ")
+                .setWidth("100px");
 
         movieGrid.setItems(query -> movieService
                 .getAllMovies(
@@ -61,7 +52,7 @@ public class MovieView extends VerticalLayout {
         movieGrid.addItemClickListener(event -> {
             Movie movie = event.getItem();
             if (movie != null) {
-                MoviePopUp popup = new MoviePopUp(movie, ratingService);
+                MoviePopUp popup = new MoviePopUp(movie, ratingService, movieService);
                 popup.open();
             }
         });
@@ -69,21 +60,6 @@ public class MovieView extends VerticalLayout {
         filterField.addValueChangeListener(event ->
                 movieGrid.getDataProvider().refreshAll());
 
-        add(h1, formLayout, filterField, movieGrid);
-
-    }
-
-    private void saveMovie() {
-        String title = titleField.getValue();
-        if (title == null || title.isBlank()) {
-            Notification.show("Bitte geben Sie einen Titel ein");
-            return;
-        }
-        String description = descriptionField.getValue();
-        movieService.saveMovie(title, description);
-        Notification.show("Film gespeichert!");
-        titleField.clear();
-        descriptionField.clear();
-        movieGrid.getDataProvider().refreshAll();
+        add(h1, filterField, movieGrid);
     }
 }
