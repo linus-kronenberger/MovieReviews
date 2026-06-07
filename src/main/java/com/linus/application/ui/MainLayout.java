@@ -47,6 +47,7 @@ public class MainLayout extends AppLayout {
         SideNav sideNav = new SideNav();
 
         sideNav.addItem(new SideNavItem("Filme", "/"),
+                new SideNavItem("Neuer Film", "/add-movie"),
                 new SideNavItem("Neue Bewertung", "/add-rating"),
                 new SideNavItem("Kategorien", "/manage-categories")
         );
