@@ -14,7 +14,7 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
   sql:
     init:
-      mode: always
+      mode: never
   datasource:
     url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:moviereviews}
     username: ${DB_USERNAME:postgres}
