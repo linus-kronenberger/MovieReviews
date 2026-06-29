@@ -1,4 +1,4 @@
-package com.linus.application.ui.add_movie_view;
+package com.linus.application.ui.addmovieview;
 
 import com.linus.application.backend.movie.infrastructure.MovieService;
 import com.linus.application.backend.movie.infrastructure.MovieType;

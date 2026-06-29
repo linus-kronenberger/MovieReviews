@@ -1,4 +1,4 @@
-package com.linus.application.ui.add_rating_view;
+package com.linus.application.ui.addratingview;
 
 import com.linus.application.backend.movie.infrastructure.Movie;
 import com.linus.application.backend.movie.infrastructure.MovieService;

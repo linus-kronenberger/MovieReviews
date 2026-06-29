@@ -1,4 +1,4 @@
-package com.linus.application.ui.movies_view.popup;
+package com.linus.application.ui.moviesview.popup;
 
 import com.linus.application.backend.essay.infrastructure.Essay;
 import com.linus.application.backend.movie.infrastructure.Movie;
@@ -23,6 +23,8 @@ public class MoviePopUp extends Dialog {
     private final RatingService ratingService;
     private final MovieService movieService;
     private final VerticalLayout contentLayout = new VerticalLayout();
+    private Button deleteButton;
+    private Grid<Rating> ratingGrid;
 
     public MoviePopUp(Movie movie, RatingService ratingService, MovieService movieService) {
         this.movie = movie;
@@ -48,17 +50,17 @@ public class MoviePopUp extends Dialog {
 
         refreshGrid();
 
-        Button deleteButton = new Button("Bewertung löschen", e -> {
-            ratingService.deleteRatingIfRoleAllowed(grid.getSelectedItems());
+        deleteButton = new Button("Bewertung löschen", e -> {
+            ratingService.deleteRatingIfRoleAllowed(ratingGrid.getSelectedItems());
             refreshGrid();
             Notification.show("Bewertung gelöscht");
         });
 
+        deleteButton.setVisible(false);
+
         Button closeButton = new Button("Schließen", e -> close());
         getFooter().add(deleteButton, closeButton);
     }
-
-    private Grid<Rating> grid;
 
     private void refreshGrid() {
         contentLayout.getChildren()
@@ -73,15 +75,25 @@ public class MoviePopUp extends Dialog {
         if (ratings.isEmpty()) {
             Paragraph noRatings = new Paragraph("Keine Bewertungen vorhanden.");
             contentLayout.add(noRatings);
-            grid = null;
+            ratingGrid = null;
         } else {
-            grid = new Grid<>(Rating.class, false);
-            grid.setItems(ratings);
-            grid.addColumn(r -> r.getCategory().getCategory()).setHeader("Kategorie").setWidth("150px");
-            grid.addColumn(Rating::getStars).setHeader("Sterne").setWidth("100px");
-            grid.addColumn(r -> essayMap.getOrDefault(r.getId(), "-")).setHeader("Essay").setWidth("350px");
-            grid.setAllRowsVisible(true);
-            contentLayout.add(grid);
+            ratingGrid = new Grid<>(Rating.class, false);
+            ratingGrid.addItemClickListener(_->onRatingClicked());
+            ratingGrid.setItems(ratings);
+            ratingGrid.addColumn(r -> r.getCategory().getCategory()).setHeader("Kategorie").setWidth("150px");
+            ratingGrid.addColumn(Rating::getStars).setHeader("Sterne").setWidth("100px");
+            ratingGrid.addColumn(r -> essayMap.getOrDefault(r.getId(), "-")).setHeader("Essay").setWidth("350px");
+            ratingGrid.setAllRowsVisible(true);
+            contentLayout.add(ratingGrid);
         }
+    }
+
+    private void onRatingClicked() {
+        if(ratingGrid.getSelectedItems().isEmpty()) {
+            deleteButton.setVisible(false);
+        } else {
+            deleteButton.setVisible(true);
+        }
+
     }
 }

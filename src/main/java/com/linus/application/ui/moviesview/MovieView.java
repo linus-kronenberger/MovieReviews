@@ -1,10 +1,10 @@
-package com.linus.application.ui.movies_view;
+package com.linus.application.ui.moviesview;
 
 import com.linus.application.backend.movie.infrastructure.Movie;
 import com.linus.application.backend.movie.infrastructure.MovieService;
 import com.linus.application.backend.rating.infrastructure.RatingService;
 import com.linus.application.ui.MainLayout;
-import com.linus.application.ui.movies_view.popup.MoviePopUp;
+import com.linus.application.ui.moviesview.popup.MoviePopUp;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
