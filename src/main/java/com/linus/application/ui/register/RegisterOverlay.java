@@ -18,7 +18,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 public class RegisterOverlay extends Dialog {
 
     public RegisterOverlay(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        setModal(true);
         setDraggable(false);
         setCloseOnOutsideClick(false);
         setWidth("400px");
@@ -56,10 +55,6 @@ public class RegisterOverlay extends Dialog {
             }
             if (userRepository.existsByUsername(user)) {
                 Notification.show("Benutzername existiert bereits");
-                return;
-            }
-            if (password.getValue() == null || password.getValue().length() < 6) {
-                Notification.show("Passwort muss mindestens 6 Zeichen lang sein");
                 return;
             }
             if (!password.getValue().equals(confirmPassword.getValue())) {

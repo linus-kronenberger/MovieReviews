@@ -9,7 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 @AnonymousAllowed
 @PageTitle("Registrieren")
-@Route(value = "register")
+@Route(value = "register", autoLayout = false)
 public class RegisterView extends Div {
 
     public RegisterView(UserRepository userRepository, PasswordEncoder passwordEncoder) {
