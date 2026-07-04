@@ -31,3 +31,15 @@ Agents in `.opencode/agents/`:
 1. **Planer** → Anforderung analysieren, Lösung skizzieren, Aufgaben aufteilen
 2. **Senior Dev** → Implementierung nach Plan
 3. **Reviewer** → Fertigen Code reviewen
+
+**Branching & MR:**
+- **Vor jedem Feature** einen neuen Branch erstellen: `git switch -c feature/KURZBESCHREIBUNG`
+- **Nach Fertigstellung** (nach erfolgreichem Review / letztem Commit) einen **Draft MR** via GitLab CLI öffnen:
+  ```sh
+  glab mr create --draft \
+    --title "Kurzbeschreibung" \
+    --description "Closes #ISSUE-NUMMER" \
+    --label frontend,backend \
+    --fill
+  ```
+- Branch-Namen und Issue-Nummer aus der Aufgabenstellung ableiten. Falls kein Issue existiert, `--fill` ohne `--description` nutzen.

@@ -1,15 +1,16 @@
 # CI/CD & Deploy
 
-## GitHub Actions (`.github/workflows/deploy.yml`)
+## GitLab CI (`.gitlab-ci.yml`)
 
-- Läuft bei Push auf `main` oder manuell via `workflow_dispatch`
-- Erwartet Secrets: `VM_HOST`, `VM_USER`, `SSH_PRIVATE_KEY`
-- CI: `mvn clean package -DskipTests` → `verify -Pit`
+- Läuft bei Push auf `master`
+- **Stage `build`**: `mvn compile` → JAR als Artefakt
+- **Stage `test`**: `mvn test`
+- **Stage `deploy`**: SSH in die VM → `git pull` → `docker compose down --remove-orphans` → `docker compose up --build -d` → `docker image prune -f`
+- Erwartet CI-Variablen: `VM_HOST`, `VM_USER`, `SSH_PRIVATE_KEY`
 
 ## Docker / Production
 
 ```sh
-./mvnw package -DskipTests && java -jar target/*.jar --spring.profiles.active=prod
 docker compose up --build -d
 ```
 

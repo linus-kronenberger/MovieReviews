@@ -21,6 +21,7 @@ ssh "$VM_USER@$VM_IP" "
   else
     git pull
   fi
+  docker compose down --remove-orphans
   docker compose up --build -d
   docker image prune -f
 "
