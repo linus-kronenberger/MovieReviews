@@ -1,5 +1,6 @@
 package com.linus.application.backend.review.infrastructure;
 
+import com.linus.application.backend.essay.infrastructure.Essay;
 import com.linus.application.backend.movie.infrastructure.Movie;
 
 import com.linus.application.backend.rating.Rating;
@@ -25,6 +26,9 @@ public class Review {
     @JoinColumn(name = "user_id")
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
+
+    @OneToMany(mappedBy = "review", cascade = CascadeType.REMOVE, orphanRemoval = true)
+    private List<Essay> essays;
 
     @Column(name = "avg_rating")
     private double averageRating = 2.5;
