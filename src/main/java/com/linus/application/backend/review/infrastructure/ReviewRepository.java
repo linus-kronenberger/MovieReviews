@@ -11,8 +11,16 @@ import java.util.List;
 
 @Repository
 public interface ReviewRepository extends CrudRepository<Review, String> {
-    @Query("SELECT r FROM Review r WHERE r.movie = :movie")
+    @Query("SELECT r FROM Review r JOIN FETCH r.user WHERE r.movie = :movie")
     List<Review> findByMovie(@Param("movie") Movie movie);
-    Review findByUser(User user);
+
+    @Query("SELECT r FROM Review r JOIN FETCH r.user WHERE r.movie = :movie AND r.user.id IN :userIds")
+    List<Review> findByMovieAndUserIdIn(@Param("movie") Movie movie, @Param("userIds") List<String> userIds);
+
+    List<Review> findByUser(User user);
+
+    @Query("SELECT r FROM Review r JOIN FETCH r.movie JOIN FETCH r.user WHERE r.user IN :users")
+    List<Review> findByUserIn(@Param("users") List<User> users);
+
     void deleteByUser(User user);
 }
