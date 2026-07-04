@@ -25,7 +25,8 @@ CREATE TABLE IF NOT EXISTS review (
     review_id VARCHAR(255) PRIMARY KEY,
     movie_id VARCHAR(255) REFERENCES movie(movie_id),
     user_id VARCHAR(255) REFERENCES app_user(user_id),
-    avg_rating DOUBLE PRECISION NOT NULL DEFAULT 2.5
+    avg_rating DOUBLE PRECISION NOT NULL DEFAULT 2.5,
+    is_draft BOOLEAN NOT NULL DEFAULT TRUE
 );
 
 CREATE TABLE IF NOT EXISTS essay (

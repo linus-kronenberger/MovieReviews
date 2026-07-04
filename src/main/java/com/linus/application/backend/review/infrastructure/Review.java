@@ -2,13 +2,10 @@ package com.linus.application.backend.review.infrastructure;
 
 import com.linus.application.backend.essay.infrastructure.Essay;
 import com.linus.application.backend.movie.infrastructure.Movie;
-
 import com.linus.application.backend.rating.Rating;
-import com.linus.application.backend.rating.RatingCategory;
 import com.linus.application.backend.user.infrastructure.User;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
+import java.util.ArrayList;
 import java.util.List;
 
 @Table(name = "review")
@@ -30,8 +27,14 @@ public class Review {
     @OneToMany(mappedBy = "review", cascade = CascadeType.REMOVE, orphanRemoval = true)
     private List<Essay> essays;
 
+    @OneToMany(mappedBy = "review", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Rating> ratings = new ArrayList<>();
+
     @Column(name = "avg_rating")
     private double averageRating = 2.5;
+
+    @Column(name = "is_draft")
+    private boolean isDraft = true;
 
     public String getId() {
         return id;
@@ -62,4 +65,20 @@ public class Review {
     }
 
     public void setAverageRating(double averageRating) {this.averageRating = averageRating;}
+
+    public boolean isDraft() {
+        return isDraft;
+    }
+
+    public void setDraft(boolean draft) {
+        isDraft = draft;
+    }
+
+    public List<Rating> getRatings() {
+        return ratings;
+    }
+
+    public void setRatings(List<Rating> ratings) {
+        this.ratings = ratings;
+    }
 }
