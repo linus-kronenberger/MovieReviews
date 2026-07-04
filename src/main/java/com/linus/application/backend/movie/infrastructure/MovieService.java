@@ -17,8 +17,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.StreamSupport;
 
 @Service
 public class MovieService {
@@ -102,9 +102,7 @@ public class MovieService {
     }
 
     public List<Movie> getAllMoviesList() {
-        List<Movie> movies = new ArrayList<>();
-        movieRepository.findAll(Sort.unsorted()).forEach(movies::add);
-        return movies;
+        return StreamSupport.stream(movieRepository.findAll(Sort.unsorted()).spliterator(), false).toList();
     }
 
     private Sort toSort(List<QuerySortOrder> sortOrders) {
