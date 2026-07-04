@@ -55,6 +55,7 @@ public class MoviePopUp extends Dialog implements LocaleChangeObserver {
         deleteButton.addClickListener(e -> {
             reviewService.deleteRatingIfRoleAllowed(ratingGrid.getSelectedItems());
             refreshGrid();
+            deleteButton.setVisible(false);
             Notification.show(getTranslation("movies.popup.deleted"));
         });
         deleteButton.setVisible(false);
