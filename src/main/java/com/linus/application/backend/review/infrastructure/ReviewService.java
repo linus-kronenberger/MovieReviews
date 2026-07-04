@@ -7,15 +7,11 @@ import com.linus.application.backend.rating.Rating;
 import com.linus.application.backend.rating.RatingCategory;
 import com.linus.application.backend.rating.RatingCategoryRepository;
 import com.linus.application.backend.user.infrastructure.User;
-import com.linus.application.backend.user.infrastructure.UserRetrievalServiceImpl;
+import com.linus.application.backend.user.domain.UserRetrievalService;
 import com.linus.application.security.AuthenticatedUser;
 import java.util.ArrayList;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,39 +23,38 @@ public class ReviewService {
     private final EssayRepository essayRepository;
     private final RatingCategoryRepository ratingCategoryRepository;
     private final AuthenticatedUser authenticatedUser;
-    private final UserRetrievalServiceImpl userRetrievalServiceImpl;
+    private final UserRetrievalService userRetrievalService;
 
     public ReviewService(ReviewRepository reviewRepository, EssayRepository essayRepository,
                          RatingCategoryRepository ratingCategoryRepository,
-                         AuthenticatedUser authenticatedUser, UserRetrievalServiceImpl userRetrievalServiceImpl) {
+                         AuthenticatedUser authenticatedUser, UserRetrievalService userRetrievalService) {
         this.reviewRepository = reviewRepository;
         this.essayRepository = essayRepository;
         this.ratingCategoryRepository = ratingCategoryRepository;
         this.authenticatedUser = authenticatedUser;
-        this.userRetrievalServiceImpl = userRetrievalServiceImpl;
+        this.userRetrievalService = userRetrievalService;
     }
 
     @Transactional
-    public Review saveReview(Movie movie, Map<RatingCategory, Double> ratings, String essayText) {
+    public void saveReview(Movie movie, Map<RatingCategory, Double> ratings, String essayText) {
         User currentUser = authenticatedUser.get().orElseThrow();
         Review review = new Review();
         review.setMovie(movie);
         review.setUser(currentUser);
 
-        AtomicReference<Double> starsSum = new AtomicReference<>((double) 0);
-        AtomicReference<Integer> count = new AtomicReference<>((int) 0);
+        double starsSum = 0.0;
+        int count = 0;
 
-
-        ratings.forEach((category, rate) -> {
+        for (Map.Entry<RatingCategory, Double> entry : ratings.entrySet()) {
             Rating rating = new Rating();
-            rating.setCategory(category);
-            rating.setStars(rate);
+            rating.setCategory(entry.getKey());
+            rating.setStars(entry.getValue());
             rating.setReview(review);
-            starsSum.updateAndGet(v -> new Double(v + rate));
-            count.updateAndGet(v -> v + 1);
-        });
+            starsSum += entry.getValue();
+            count++;
+        }
 
-        Double avg = starsSum.get() / count.get();
+        double avg = count > 0 ? starsSum / count : 0.0;
 
         review.setAverageRating(avg);
 
@@ -72,8 +67,6 @@ public class ReviewService {
             essay.setRating(review);
             essayRepository.save(essay);
         }
-
-        return review;
     }
 
     @Transactional(readOnly = true)
@@ -106,13 +99,13 @@ public class ReviewService {
     }
 
     @Transactional
-    public RatingCategory createCategory(String name, String description) {
+    public void createCategory(String name, String description) {
         User currentUser = authenticatedUser.get().orElseThrow();
         RatingCategory category = new RatingCategory();
         category.setCategory(name);
         category.setDescription(description);
         category.setUser(currentUser);
-        return ratingCategoryRepository.save(category);
+      ratingCategoryRepository.save(category);
     }
 
     @Transactional
@@ -129,7 +122,7 @@ public class ReviewService {
 
     public List<RatingCategory> getAdminCategories() {
         List<RatingCategory> adminCategories = new ArrayList<>();
-        List<User> adminUsers = userRetrievalServiceImpl.findAdminUsers().orElseThrow(RuntimeException::new);
+        List<User> adminUsers = userRetrievalService.findAdminUsers().orElseThrow(RuntimeException::new);
         adminUsers.forEach(u -> {
             List<RatingCategory> userRatingCategories = ratingCategoryRepository.findByUser(u);
             adminCategories.addAll(userRatingCategories);
@@ -138,13 +131,9 @@ public class ReviewService {
     }
 
     public boolean reviewForUserExists() {
-        return authenticatedUser.get()
-                .map(user -> reviewRepository.findByUser(user) != null)
-                .orElse(false);
-    }
-
-    public boolean reviewForUserExists(User user) {
-      return reviewRepository.findByUser(user) != null;
+        User currentUser = authenticatedUser.get().orElse(null);
+        if (currentUser == null) return false;
+        return reviewRepository.findByUser(currentUser) != null;
     }
 
     @Transactional

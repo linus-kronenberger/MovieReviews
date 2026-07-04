@@ -15,11 +15,11 @@ public class UserRetrievalServiceImpl implements UserRetrievalService {
     this.userRepository = userRepository;
   }
 
-  @Transactional
+  @Transactional(readOnly = true)
   @Override
   public Optional<List<User>> findAdminUsers() {
     List<User> adminUsers = userRepository.findByRole(Role.ADMIN);
-    if(adminUsers != null && adminUsers.size() > 0) {
+    if (adminUsers != null && !adminUsers.isEmpty()) {
       return Optional.of(adminUsers);
     } else {
       return Optional.empty();
