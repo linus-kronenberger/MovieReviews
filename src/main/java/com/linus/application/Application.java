@@ -1,6 +1,7 @@
 package com.linus.application;
 
 import com.vaadin.flow.component.page.BodySize;
+import com.vaadin.flow.component.page.ColorScheme;
 import com.vaadin.flow.theme.Theme;
 import com.vaadin.flow.theme.aura.Aura;
 import org.springframework.boot.SpringApplication;
@@ -22,6 +23,7 @@ import com.vaadin.flow.theme.lumo.Lumo;
 @PWA(name = "Movie Reviews", shortName = "Reviews")
 @StyleSheet(Aura.STYLESHEET)
 @StyleSheet("styles.css")
+@ColorScheme(ColorScheme.Value.LIGHT_DARK)
 public class Application implements AppShellConfigurator {
 
     public static void main(String[] args) {
