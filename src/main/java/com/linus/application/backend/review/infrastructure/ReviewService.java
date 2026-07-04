@@ -2,6 +2,7 @@ package com.linus.application.backend.review.infrastructure;
 
 import com.linus.application.backend.essay.infrastructure.Essay;
 import com.linus.application.backend.essay.infrastructure.EssayRepository;
+import com.linus.application.backend.friend.FriendService;
 import com.linus.application.backend.movie.infrastructure.Movie;
 import com.linus.application.backend.rating.Rating;
 import com.linus.application.backend.rating.RatingCategory;
@@ -10,12 +11,12 @@ import com.linus.application.backend.user.infrastructure.User;
 import com.linus.application.backend.user.domain.UserRetrievalService;
 import com.linus.application.security.AuthenticatedUser;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 public class ReviewService {
@@ -24,15 +25,18 @@ public class ReviewService {
     private final RatingCategoryRepository ratingCategoryRepository;
     private final AuthenticatedUser authenticatedUser;
     private final UserRetrievalService userRetrievalService;
+    private final FriendService friendService;
 
     public ReviewService(ReviewRepository reviewRepository, EssayRepository essayRepository,
                          RatingCategoryRepository ratingCategoryRepository,
-                         AuthenticatedUser authenticatedUser, UserRetrievalService userRetrievalService) {
+                         AuthenticatedUser authenticatedUser, UserRetrievalService userRetrievalService,
+                         FriendService friendService) {
         this.reviewRepository = reviewRepository;
         this.essayRepository = essayRepository;
         this.ratingCategoryRepository = ratingCategoryRepository;
         this.authenticatedUser = authenticatedUser;
         this.userRetrievalService = userRetrievalService;
+        this.friendService = friendService;
     }
 
     @Transactional
@@ -72,6 +76,22 @@ public class ReviewService {
     @Transactional(readOnly = true)
     public List<Review> getRatingsByMovie(Movie movie) {
         return reviewRepository.findByMovie(movie);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Review> getRatingsByMovieForFriends(Movie movie) {
+        User currentUser = authenticatedUser.get().orElseThrow();
+        List<String> userIds = friendService.getFriendIds(currentUser);
+        userIds.add(currentUser.getId());
+        return reviewRepository.findByMovieAndUserIdIn(movie, userIds);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Review> getAllReviewsForUserAndFriends() {
+        User currentUser = authenticatedUser.get().orElseThrow();
+        List<User> users = new ArrayList<>(friendService.getFriends(currentUser));
+        users.add(currentUser);
+        return reviewRepository.findByUserIn(users);
     }
 
     @Transactional(readOnly = true)
@@ -118,6 +138,27 @@ public class ReviewService {
         if (!category.getUser().getId().equals(currentUser.getId())) return;
 
         ratingCategoryRepository.delete(category);
+    }
+
+    @Transactional(readOnly = true)
+    public List<RatingCategory> getCustomCategoriesForFriendsAndSelf() {
+        User currentUser = authenticatedUser.get().orElseThrow();
+        List<User> friends = friendService.getFriends(currentUser);
+
+        List<User> users = new ArrayList<>(friends);
+        users.add(currentUser);
+
+        List<RatingCategory> allCategories = ratingCategoryRepository.findByUserIn(users);
+
+        Set<String> adminUserIds = userRetrievalService.findAdminUsers()
+                .orElse(List.of())
+                .stream()
+                .map(User::getId)
+                .collect(Collectors.toSet());
+
+        return allCategories.stream()
+                .filter(cat -> !adminUserIds.contains(cat.getUser().getId()))
+                .collect(Collectors.toList());
     }
 
     public List<RatingCategory> getAdminCategories() {
