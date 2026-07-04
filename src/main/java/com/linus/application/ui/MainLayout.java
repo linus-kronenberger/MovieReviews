@@ -67,6 +67,7 @@ public class MainLayout extends AppLayout implements LocaleChangeObserver {
         navItems.add(new SideNavItem("", "/manage-categories"));
         navItems.add(new SideNavItem("", "/friends"));
         navItems.add(new SideNavItem("", "/profile"));
+        navItems.add(new SideNavItem("", "/statistics"));
         nav.addItem(navItems.toArray(new SideNavItem[0]));
 
         nav.getStyle().set("margin", "var(--vaadin-gap-s)");
@@ -86,6 +87,7 @@ public class MainLayout extends AppLayout implements LocaleChangeObserver {
         navItems.get(3).setLabel(getTranslation("mainlayout.nav.categories"));
         navItems.get(4).setLabel(getTranslation("mainlayout.nav.friends"));
         navItems.get(5).setLabel(getTranslation("mainlayout.nav.profile"));
+        navItems.get(6).setLabel(getTranslation("mainlayout.nav.statistics"));
         refreshFooter();
     }
 
