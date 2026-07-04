@@ -11,10 +11,13 @@ import com.linus.application.ui.util.components.formulars.StarSlider;
 import com.linus.application.ui.util.components.notifications.SuccessNotification;
 import com.linus.application.ui.util.components.notifications.WarningNotification;
 import com.vaadin.flow.component.button.Button;
+import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H2;
+import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
@@ -113,6 +116,47 @@ public class AddReviewView extends VerticalLayout implements LocaleChangeObserve
 
     private void openCustomCategoryPopUp() {
         Dialog dialog = new Dialog();
+        dialog.setHeaderTitle(getTranslation("addrating.customCategoryTitle"));
+
+        VerticalLayout layout = new VerticalLayout();
+
+        List<RatingCategory> customCategories = reviewService.getCustomCategoriesForFriendsAndSelf();
+
+        Map<RatingCategory, Double> tempRatings = new HashMap<>();
+
+        for (RatingCategory category : customCategories) {
+            String label = category.getCategory();
+            if (!category.getUser().equals(authenticatedUser.get().orElse(null))) {
+                label += " (" + category.getUser().getUsername() + ")";
+            }
+            StarSlider slider = new StarSlider(label);
+            double currentValue = ratings.getOrDefault(category, 2.5);
+            slider.setValue(currentValue);
+            tempRatings.put(category, currentValue);
+            layout.add(slider);
+            slider.addValueChangeListener(event -> {
+                tempRatings.put(category, slider.getValue());
+            });
+        }
+
+        if (customCategories.isEmpty()) {
+            Paragraph noCategories = new Paragraph(getTranslation("addrating.noCustomCategories"));
+            layout.add(noCategories);
+        }
+
+        Button confirmButton = new Button(getTranslation("confirm"));
+        confirmButton.addThemeVariants(ButtonVariant.SUCCESS);
+        confirmButton.addClickListener(e -> {
+            ratings.putAll(tempRatings);
+            dialog.close();
+        });
+
+        Button cancelButton = new Button(getTranslation("cancel"));
+        cancelButton.addThemeVariants(ButtonVariant.ERROR);
+        cancelButton.addClickListener(e -> dialog.close());
+
+        dialog.getFooter().add(cancelButton, confirmButton);
+        dialog.add(layout);
         dialog.open();
     }
 
@@ -133,34 +177,50 @@ public class AddReviewView extends VerticalLayout implements LocaleChangeObserve
     private void save() {
         Movie movie = movieCombo.getValue();
 
-        // ---------------------
-        // form check
-        // ---------------------
-
         if (movie == null) {
             WarningNotification warningNotification = new WarningNotification(getTranslation("addrating.error.movieRequired"));
             warningNotification.open();
             return;
         }
 
-        // ---------------------
-        // warning if review already exists
-        // ---------------------
-
         if(reviewService.reviewForUserExists()) {
             ReviewOverrideDialog reviewOverrideDialog = new ReviewOverrideDialog();
             reviewOverrideDialog.open();
-            reviewOverrideDialog.addRejectListener(_ -> {
-                return ;
-            });
+            reviewOverrideDialog.addRejectListener(_ -> {});
             reviewOverrideDialog.addConfirmListener(_ -> {
                 reviewService.deleteReviewByUser();
-                saveNotifyReview(movie);
+                proceedSave(movie);
             });
             return;
         }
 
-        saveNotifyReview(movie);
+        proceedSave(movie);
+    }
+
+    private boolean hasUnconfirmedCustomCategories() {
+        List<RatingCategory> customCategories = reviewService.getCustomCategoriesForFriendsAndSelf();
+        return customCategories.stream().anyMatch(cat -> !ratings.containsKey(cat));
+    }
+
+    private void proceedSave(Movie movie) {
+        if (hasUnconfirmedCustomCategories()) {
+            ConfirmDialog dialog = new ConfirmDialog();
+            dialog.setHeader(getTranslation("addrating.unconfirmedCustomTitle"));
+            dialog.setText(getTranslation("addrating.unconfirmedCustomText"));
+            dialog.setCancelable(true);
+
+            Button confirmButton = new Button(getTranslation("confirm"));
+            confirmButton.addThemeVariants(ButtonVariant.SUCCESS);
+            Button cancelButton = new Button(getTranslation("cancel"));
+            cancelButton.addThemeVariants(ButtonVariant.ERROR);
+            dialog.setConfirmButton(confirmButton);
+            dialog.setCancelButton(cancelButton);
+
+            dialog.addConfirmListener(_ -> saveNotifyReview(movie));
+            dialog.open();
+        } else {
+            saveNotifyReview(movie);
+        }
     }
 
     private void saveNotifyReview(Movie movie) {
