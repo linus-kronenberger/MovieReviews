@@ -6,6 +6,7 @@ import com.linus.application.backend.rating.RatingCategory;
 import com.linus.application.backend.review.infrastructure.ReviewService;
 import com.linus.application.backend.user.infrastructure.UserRepository;
 import com.linus.application.security.AuthenticatedUser;
+import com.linus.application.ui.util.components.dialogs.ReviewOverrideDialog;
 import com.linus.application.ui.util.components.formulars.StarSlider;
 import com.linus.application.ui.util.components.notifications.SuccessNotification;
 import com.linus.application.ui.util.components.notifications.WarningNotification;
@@ -84,7 +85,7 @@ public class AddReviewView extends VerticalLayout implements LocaleChangeObserve
             starSliders.add(slider);
             adminRatingsLayout.add(categorySliderLayout);
             ratings.put(adminCategory, 2.5);
-            slider.addKeyUpListener(event -> {
+            slider.addValueChangeListener(event -> {
                ratings.put(adminCategory, slider.getValue());
             });
         });
@@ -131,13 +132,38 @@ public class AddReviewView extends VerticalLayout implements LocaleChangeObserve
 
     private void save() {
         Movie movie = movieCombo.getValue();
+
+        // ---------------------
+        // form check
+        // ---------------------
+
         if (movie == null) {
             WarningNotification warningNotification = new WarningNotification(getTranslation("addrating.error.movieRequired"));
             warningNotification.open();
             return;
         }
 
+        // ---------------------
+        // warning if review already exists
+        // ---------------------
 
+        if(reviewService.reviewForUserExists()) {
+            ReviewOverrideDialog reviewOverrideDialog = new ReviewOverrideDialog();
+            reviewOverrideDialog.open();
+            reviewOverrideDialog.addRejectListener(_ -> {
+                return ;
+            });
+            reviewOverrideDialog.addConfirmListener(_ -> {
+                reviewService.deleteReviewByUser();
+                saveNotifyReview(movie);
+            });
+            return;
+        }
+
+        saveNotifyReview(movie);
+    }
+
+    private void saveNotifyReview(Movie movie) {
         reviewService.saveReview(movie, ratings,essayArea.getValue());
 
         SuccessNotification savedNotification = new SuccessNotification(getTranslation("addrating.saved"));
@@ -147,4 +173,4 @@ public class AddReviewView extends VerticalLayout implements LocaleChangeObserve
         starsSlider.setValue(5.0);
         essayArea.clear();
     }
-}
+ }
