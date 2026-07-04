@@ -10,7 +10,7 @@
 | Pfad | View | Status |
 |------|------|--------|
 | `/` | MovieView | fertig |
-| `/add-rating` | AddRatingView | fertig |
+| `/add-review` | AddRatingView | fertig |
 
 ## Dev-Profil
 - `defer-datasource-initialization: true` (JPA erstellt Tabellen vor `data.sql`)
