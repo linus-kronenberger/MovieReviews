@@ -1,8 +1,8 @@
 package com.linus.application.backend;
 
 import com.linus.application.backend.movie.infrastructure.MovieImportService;
-import com.linus.application.backend.rating.infrastructure.RatingCategory;
-import com.linus.application.backend.rating.infrastructure.RatingCategoryRepository;
+import com.linus.application.backend.rating.RatingCategory;
+import com.linus.application.backend.rating.RatingCategoryRepository;
 import com.linus.application.backend.user.infrastructure.Role;
 import com.linus.application.backend.user.infrastructure.User;
 import com.linus.application.backend.user.infrastructure.UserRepository;
@@ -51,9 +51,9 @@ public class DataInitializer {
         admin = userRepository.save(admin);
 
         log.info("========================================");
-        log.info("Admin-Zugang:");
-        log.info("  Username: admin");
-        log.info("  Passwort: {}", password);
+        log.info("System Access...");
+        log.info("  username: admin");
+        log.info("  pw: {}", password);
         log.info("========================================");
 
         List<RatingCategory> categories = List.of(
