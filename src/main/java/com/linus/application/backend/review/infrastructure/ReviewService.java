@@ -11,6 +11,7 @@ import com.linus.application.backend.user.domain.UserRetrievalService;
 import com.linus.application.security.AuthenticatedUser;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,42 +37,91 @@ public class ReviewService {
     }
 
     @Transactional
-    public void saveReview(Movie movie, Map<RatingCategory, Double> ratings, String essayText) {
+    public Review saveDraft(Movie movie, Map<RatingCategory, Double> ratingValues, String essayText) {
         User currentUser = authenticatedUser.get().orElseThrow();
-        Review review = new Review();
-        review.setMovie(movie);
-        review.setUser(currentUser);
+
+        Review review = reviewRepository.findByUserAndMovie(currentUser, movie)
+                .orElseGet(() -> {
+                    Review r = new Review();
+                    r.setMovie(movie);
+                    r.setUser(currentUser);
+                    r.setDraft(true);
+                    return r;
+                });
+
+        review.getRatings().clear();
 
         double starsSum = 0.0;
         int count = 0;
 
-        for (Map.Entry<RatingCategory, Double> entry : ratings.entrySet()) {
+        for (Map.Entry<RatingCategory, Double> entry : ratingValues.entrySet()) {
             Rating rating = new Rating();
             rating.setCategory(entry.getKey());
             rating.setStars(entry.getValue());
             rating.setReview(review);
+            review.getRatings().add(rating);
             starsSum += entry.getValue();
             count++;
         }
 
-        double avg = count > 0 ? starsSum / count : 0.0;
+        review.setAverageRating(count > 0 ? starsSum / count : 0.0);
 
-        review.setAverageRating(avg);
-
-
-        reviewRepository.save(review);
-
-        if (essayText != null && !essayText.isBlank()) {
+        List<Essay> existingEssays = essayRepository.findByReviewIn(List.of(review));
+        if (!existingEssays.isEmpty()) {
+            Essay essay = existingEssays.get(0);
+            if (essayText != null && !essayText.isBlank()) {
+                essay.setText(essayText);
+                essayRepository.save(essay);
+            } else {
+                essayRepository.delete(essay);
+            }
+        } else if (essayText != null && !essayText.isBlank()) {
             Essay essay = new Essay();
             essay.setText(essayText);
             essay.setRating(review);
             essayRepository.save(essay);
         }
+
+        return reviewRepository.save(review);
+    }
+
+    @Transactional
+    public void publishReview(Movie movie) {
+        User currentUser = authenticatedUser.get().orElseThrow();
+        reviewRepository.findByUserAndMovie(currentUser, movie)
+                .ifPresent(review -> {
+                    review.setDraft(false);
+                    reviewRepository.save(review);
+                });
     }
 
     @Transactional(readOnly = true)
-    public List<Review> getRatingsByMovie(Movie movie) {
-        return reviewRepository.findByMovie(movie);
+    public Optional<Review> findDraftByMovie(Movie movie) {
+        User currentUser = authenticatedUser.get().orElse(null);
+        if (currentUser == null) return Optional.empty();
+        return reviewRepository.findByUserAndMovie(currentUser, movie);
+    }
+
+    @Transactional(readOnly = true)
+    public Map<RatingCategory, Double> getDraftRatings(Review review) {
+        Map<RatingCategory, Double> result = new java.util.HashMap<>();
+        if (review.getRatings() != null) {
+            for (Rating rating : review.getRatings()) {
+                result.put(rating.getCategory(), rating.getStars());
+            }
+        }
+        return result;
+    }
+
+    @Transactional(readOnly = true)
+    public String getDraftEssay(Review review) {
+        List<Essay> essays = essayRepository.findByReviewIn(List.of(review));
+        return essays.isEmpty() ? "" : essays.get(0).getText();
+    }
+
+    @Transactional(readOnly = true)
+    public List<Review> getPublishedRatingsByMovie(Movie movie) {
+        return reviewRepository.findPublishedByMovie(movie);
     }
 
     @Transactional(readOnly = true)
@@ -128,17 +178,5 @@ public class ReviewService {
             adminCategories.addAll(userRatingCategories);
         });
         return adminCategories;
-    }
-
-    public boolean reviewForUserExists() {
-        User currentUser = authenticatedUser.get().orElse(null);
-        if (currentUser == null) return false;
-        return reviewRepository.findByUser(currentUser) != null;
-    }
-
-    @Transactional
-    public void deleteReviewByUser() {
-        User  currentUser = authenticatedUser.get().orElseThrow();
-        reviewRepository.deleteByUser(currentUser);
     }
 }

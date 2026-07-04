@@ -88,7 +88,7 @@ public class MoviePopUp extends Dialog implements LocaleChangeObserver {
                 .filter(child -> child instanceof Grid || child instanceof Paragraph)
                 .forEach(contentLayout::remove);
 
-        List<Review> reviews = reviewService.getRatingsByMovie(movie);
+        List<Review> reviews = reviewService.getPublishedRatingsByMovie(movie);
         List<Essay> essays = reviewService.getEssaysByRatings(reviews);
         Map<String, String> essayMap = essays.stream()
                 .collect(Collectors.toMap(e -> e.getRating().getId(), Essay::getText));
