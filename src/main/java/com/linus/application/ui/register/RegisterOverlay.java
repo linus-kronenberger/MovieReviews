@@ -1,5 +1,6 @@
 package com.linus.application.ui.register;
 
+import com.linus.application.backend.friend.FriendService;
 import com.linus.application.backend.user.infrastructure.Role;
 import com.linus.application.backend.user.infrastructure.User;
 import com.linus.application.backend.user.infrastructure.UserRepository;
@@ -13,6 +14,10 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 public class RegisterOverlay extends Dialog {
@@ -24,8 +29,18 @@ public class RegisterOverlay extends Dialog {
     private final PasswordField confirmPassword;
     private final Button register;
     private final Button cancel;
+    private final UserDetailsService userDetailsService;
 
     public RegisterOverlay(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        this(userRepository, passwordEncoder, null, null);
+    }
+
+    public RegisterOverlay(UserRepository userRepository, PasswordEncoder passwordEncoder, UserDetailsService userDetailsService) {
+        this(userRepository, passwordEncoder, userDetailsService, null);
+    }
+
+    public RegisterOverlay(UserRepository userRepository, PasswordEncoder passwordEncoder, UserDetailsService userDetailsService, FriendService friendService) {
+        this.userDetailsService = userDetailsService;
         setDraggable(false);
         setCloseOnOutsideClick(false);
         setWidth("400px");
@@ -50,6 +65,7 @@ public class RegisterOverlay extends Dialog {
         register = new Button();
         register.setWidthFull();
         register.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        register.addClickShortcut(com.vaadin.flow.component.Key.ENTER);
 
         cancel = new Button();
         cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
@@ -74,10 +90,15 @@ public class RegisterOverlay extends Dialog {
             newUser.setName(user);
             newUser.setPasswordHash(passwordEncoder.encode(password.getValue()));
             newUser.setRole(Role.USER);
+            newUser.setFriendCode(FriendService.generateUniqueFriendCode(userRepository));
             userRepository.save(newUser);
             Notification.show(getTranslation("register.success"));
             close();
-            getUI().ifPresent(ui -> ui.navigate("login"));
+            UserDetails userDetails = userDetailsService.loadUserByUsername(user);
+            UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
+                    userDetails, null, userDetails.getAuthorities());
+            SecurityContextHolder.getContext().setAuthentication(auth);
+            getUI().ifPresent(ui -> ui.navigate(""));
         });
 
         cancel.addClickListener(e -> {
