@@ -43,8 +43,7 @@ public class MovieImportService {
 
                 String title = parts[0];
                 String description = parts[1];
-
-                String imdbId = movieService.searchImdbId(title);
+                String imdbId = parts.length > 2 ? parts[2] : movieService.searchImdbId(title);
 
                 Movie movie = new Movie();
                 movie.setTitle(title);

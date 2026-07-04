@@ -3,6 +3,7 @@ package com.linus.application.ui.moviesview;
 import com.linus.application.backend.movie.infrastructure.Movie;
 import com.linus.application.backend.movie.infrastructure.MovieService;
 import com.linus.application.backend.review.infrastructure.ReviewService;
+import com.linus.application.security.AuthenticatedUser;
 import com.linus.application.ui.MainLayout;
 import com.linus.application.ui.moviesview.popup.MoviePopUp;
 import com.vaadin.flow.component.grid.Grid;
@@ -21,14 +22,16 @@ public class MovieView extends VerticalLayout implements LocaleChangeObserver {
 
     private final MovieService movieService;
     private final ReviewService reviewService;
+    private final AuthenticatedUser authenticatedUser;
 
     private final H1 h1;
     private final TextField filterField;
     private final Grid<Movie> movieGrid = new Grid<>();
 
-    public MovieView(MovieService movieService, ReviewService reviewService) {
+    public MovieView(MovieService movieService, ReviewService reviewService, AuthenticatedUser authenticatedUser) {
         this.movieService = movieService;
         this.reviewService = reviewService;
+        this.authenticatedUser = authenticatedUser;
         h1 = new H1();
 
         filterField = new TextField();
@@ -51,7 +54,8 @@ public class MovieView extends VerticalLayout implements LocaleChangeObserver {
         movieGrid.addItemClickListener(event -> {
             Movie movie = event.getItem();
             if (movie != null) {
-                MoviePopUp popup = new MoviePopUp(movie, reviewService, movieService);
+                MoviePopUp popup = new MoviePopUp(movie, reviewService, movieService, authenticatedUser,
+                        () -> movieGrid.getDataProvider().refreshAll());
                 popup.open();
             }
         });
