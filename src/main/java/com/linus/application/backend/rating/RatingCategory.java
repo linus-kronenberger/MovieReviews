@@ -1,4 +1,4 @@
-package com.linus.application.backend.rating.infrastructure;
+package com.linus.application.backend.rating;
 
 import com.linus.application.backend.user.infrastructure.User;
 import jakarta.persistence.*;
@@ -7,9 +7,9 @@ import jakarta.persistence.*;
 @Entity
 public class RatingCategory {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "category_id")
-    private Long id;
+    private String id;
 
     @Column
     private String category;
@@ -21,11 +21,11 @@ public class RatingCategory {
     @ManyToOne(fetch = FetchType.LAZY)
     private User user;
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 

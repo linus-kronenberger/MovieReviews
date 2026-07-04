@@ -1,4 +1,4 @@
-package com.linus.application.backend.rating.infrastructure;
+package com.linus.application.backend.review.infrastructure;
 
 import com.linus.application.backend.movie.infrastructure.Movie;
 import org.springframework.data.jpa.repository.Query;
@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface RatingRepository extends CrudRepository<Rating, Long> {
-    @Query("SELECT r FROM Rating r JOIN FETCH r.category WHERE r.movie = :movie")
-    List<Rating> findByMovie(@Param("movie") Movie movie);
+public interface ReviewRepository extends CrudRepository<Review, String> {
+    @Query("SELECT r FROM Review r WHERE r.movie = :movie")
+    List<Review> findByMovie(@Param("movie") Movie movie);
 }

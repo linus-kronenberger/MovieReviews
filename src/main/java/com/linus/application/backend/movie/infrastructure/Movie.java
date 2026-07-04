@@ -6,9 +6,9 @@ import jakarta.persistence.*;
 @Table(name = "movie")
 public class Movie {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "movie_id")
-    private Long id;
+    private String id;
 
     @Column(name = "title")
     private String title;
@@ -23,11 +23,11 @@ public class Movie {
     @Column(name = "type")
     private MovieType type;
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 

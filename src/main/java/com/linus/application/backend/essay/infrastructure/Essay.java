@@ -1,16 +1,16 @@
 package com.linus.application.backend.essay.infrastructure;
 
 
-import com.linus.application.backend.rating.infrastructure.Rating;
+import com.linus.application.backend.review.infrastructure.Review;
 import jakarta.persistence.*;
 
 @Table(name = "essay")
 @Entity
 public class Essay {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "essay_id")
-    private Long id;
+    private String id;
 
     @Column(name = "text")
     private String text;
@@ -19,14 +19,14 @@ public class Essay {
     private Integer version;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "rating_id", referencedColumnName = "rating_id")
-    private Rating rating;
+    @JoinColumn(name = "review_id", referencedColumnName = "review_id")
+    private Review review;
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -46,11 +46,11 @@ public class Essay {
         this.version = version;
     }
 
-    public Rating getRating() {
-        return rating;
+    public Review getRating() {
+        return review;
     }
 
-    public void setRating(Rating rating) {
-        this.rating = rating;
+    public void setRating(Review review) {
+        this.review = review;
     }
 }

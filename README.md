@@ -44,7 +44,7 @@ Startet PostgreSQL 16 und die App (Port 8080). Alle Werte sind über Umgebungsva
 ## Features
 
 - **Filmliste** (`/`) – Übersicht aller Filme mit Filter, Sortierung und Klick für Bewertungs-Detail
-- **Neue Bewertung** (`/add-rating`) – Film auswählen, Kategorie wählen, Sterne vergeben, Essay schreiben und speichern
+- **Neue Bewertung** (`/add-review`) – Film auswählen, Kategorie wählen, Sterne vergeben, Essay schreiben und speichern
 - **Film anlegen** – direkt auf der Filmliste per Titel- und Beschreibungsfeld
 
 ## Projektstruktur
@@ -57,7 +57,7 @@ com.linus.application
   ui.movies_view.popup.MoviePopUp # Bewertungs-Dialog
   ui.add_rating_view.AddRatingView # Bewertung anlegen
   backend.movie.infrastructure   # Movie-Entity, Repository, Service
-  backend.rating.infrastructure  # Rating/RatingCategory-Entity, Repository, Service
+  backend.review.infrastructure  # Rating/RatingCategory-Entity, Repository, Service
   backend.essay.infrastructure   # Essay-Entity, Repository
   backend.user.infrastructure    # User-Entity (vorbereitet)
 ```

@@ -9,44 +9,63 @@ import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.i18n.LocaleChangeEvent;
+import com.vaadin.flow.i18n.LocaleChangeObserver;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.RolesAllowed;
 
 @Route(value = "add-movie", layout = MainLayout.class)
 @RolesAllowed({"USER", "ADMIN"})
-public class AddMovieView extends VerticalLayout {
+public class AddMovieView extends VerticalLayout implements LocaleChangeObserver {
 
     private final MovieService movieService;
-
-    private final TextField titleField = new TextField("Titel");
-    private final TextField descriptionField = new TextField("Beschreibung");
-    private final TextField imdbIdField = new TextField("IMDb ID");
-    private final ComboBox<MovieType> typeCombo = new ComboBox<>("Typ");
+    private final H1 h1;
+    private final TextField titleField = new TextField();
+    private final TextField descriptionField = new TextField();
+    private final TextField imdbIdField = new TextField();
+    private final ComboBox<MovieType> typeCombo = new ComboBox<>();
+    private final Button saveButton;
 
     public AddMovieView(MovieService movieService) {
         this.movieService = movieService;
 
-        H1 h1 = new H1("Neuen Film anlegen");
+        h1 = new H1();
 
         titleField.setWidthFull();
         descriptionField.setWidthFull();
         imdbIdField.setWidthFull();
-        imdbIdField.setPlaceholder("z.B. tt1375666");
 
         typeCombo.setItems(MovieType.values());
-        typeCombo.setItemLabelGenerator(MovieType::getDisplayName);
+        typeCombo.setItemLabelGenerator(mt -> getTranslation("movieType." + mt.name()));
         typeCombo.setValue(MovieType.FILM);
         typeCombo.setWidthFull();
 
-        Button saveButton = new Button("Speichern", event -> save());
+        saveButton = new Button();
+        saveButton.addClickListener(_ -> save());
 
         add(h1, titleField, descriptionField, imdbIdField, typeCombo, saveButton);
+        updateTexts();
+    }
+
+    @Override
+    public void localeChange(LocaleChangeEvent event) {
+        updateTexts();
+    }
+
+    private void updateTexts() {
+        h1.setText(getTranslation("addmovie.title"));
+        titleField.setLabel(getTranslation("addmovie.field.title"));
+        descriptionField.setLabel(getTranslation("addmovie.field.description"));
+        imdbIdField.setLabel(getTranslation("addmovie.field.imdbId"));
+        imdbIdField.setPlaceholder(getTranslation("addmovie.imdbPlaceholder"));
+        typeCombo.setLabel(getTranslation("addmovie.field.type"));
+        saveButton.setText(getTranslation("addmovie.save"));
     }
 
     private void save() {
         String title = titleField.getValue();
         if (title == null || title.isBlank()) {
-            Notification.show("Bitte geben Sie einen Titel ein");
+            Notification.show(getTranslation("addmovie.error.titleRequired"));
             return;
         }
         String imdbId = imdbIdField.getValue();
@@ -54,7 +73,7 @@ public class AddMovieView extends VerticalLayout {
             imdbId = null;
         }
         movieService.saveMovie(title, descriptionField.getValue(), imdbId, typeCombo.getValue());
-        Notification.show("Film gespeichert!");
+        Notification.show(getTranslation("addmovie.saved"));
         titleField.clear();
         descriptionField.clear();
         imdbIdField.clear();

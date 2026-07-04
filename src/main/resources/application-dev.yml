@@ -7,17 +7,23 @@ server:
 spring:
     sql:
         init:
-            mode: never
+            mode: always
     mustache:
         check-template-location: false
     datasource:
-        url: jdbc:h2:mem:mydb
+        url: jdbc:h2:file:./data/moviereviews;AUTO_SERVER=TRUE
         username: ${DB_USERNAME:user}
         password: ${DB_PASSWORD:password}
         driverClassName: org.h2.Driver
-        jpa:
-            database-platform: org.hibernate.dialect.H2Dialect
-            defer-datasource-initialization: true
+    jpa:
+        database-platform: org.hibernate.dialect.H2Dialect
+        defer-datasource-initialization: true
+        hibernate:
+            ddl-auto: create-drop
+        show-sql: true
+        properties:
+            hibernate:
+                format_sql: true
 vaadin:
     allowed-packages: com.vaadin,org.vaadin,dev.hilla,com.linus.application
     frontend:

@@ -19,7 +19,7 @@ import com.vaadin.flow.theme.lumo.Lumo;
  *
  */
 @SpringBootApplication
-@PWA(name = "Project Base for Vaadin with Spring", shortName = "Project Base")
+@PWA(name = "Movie Reviews", shortName = "Reviews")
 @StyleSheet(Aura.STYLESHEET)
 @StyleSheet("styles.css")
 public class Application implements AppShellConfigurator {

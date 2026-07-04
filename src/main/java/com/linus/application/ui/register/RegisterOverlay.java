@@ -17,6 +17,14 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 public class RegisterOverlay extends Dialog {
 
+    private final H2 title;
+    private final Paragraph description;
+    private final TextField username;
+    private final PasswordField password;
+    private final PasswordField confirmPassword;
+    private final Button register;
+    private final Button cancel;
+
     public RegisterOverlay(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         setDraggable(false);
         setCloseOnOutsideClick(false);
@@ -26,39 +34,39 @@ public class RegisterOverlay extends Dialog {
         card.setPadding(false);
         card.getStyle().set("padding", "var(--lumo-space-xl)");
 
-        H2 title = new H2("Registrieren");
+        title = new H2();
         title.getStyle().set("margin-top", "0");
 
-        Paragraph description = new Paragraph("Erstelle ein neues Konto");
+        description = new Paragraph();
         description.getStyle().set("color", "var(--lumo-secondary-text-color)");
 
-        TextField username = new TextField("Benutzername");
+        username = new TextField();
         username.setWidthFull();
-        PasswordField password = new PasswordField("Passwort");
+        password = new PasswordField();
         password.setWidthFull();
-        PasswordField confirmPassword = new PasswordField("Passwort bestätigen");
+        confirmPassword = new PasswordField();
         confirmPassword.setWidthFull();
 
-        Button register = new Button("Registrieren");
+        register = new Button();
         register.setWidthFull();
         register.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
 
-        Button cancel = new Button("Zum Login");
+        cancel = new Button();
         cancel.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
         cancel.setWidthFull();
 
         register.addClickListener(e -> {
             String user = username.getValue();
             if (user == null || user.isBlank()) {
-                Notification.show("Bitte geben Sie einen Benutzernamen ein");
+                Notification.show(getTranslation("register.error.usernameRequired"));
                 return;
             }
             if (userRepository.existsByUsername(user)) {
-                Notification.show("Benutzername existiert bereits");
+                Notification.show(getTranslation("register.error.usernameExists"));
                 return;
             }
             if (!password.getValue().equals(confirmPassword.getValue())) {
-                Notification.show("Passwörter stimmen nicht überein");
+                Notification.show(getTranslation("register.error.passwordMismatch"));
                 return;
             }
             User newUser = new User();
@@ -67,7 +75,7 @@ public class RegisterOverlay extends Dialog {
             newUser.setPasswordHash(passwordEncoder.encode(password.getValue()));
             newUser.setRole(Role.USER);
             userRepository.save(newUser);
-            Notification.show("Registrierung erfolgreich! Du kannst dich jetzt einloggen.");
+            Notification.show(getTranslation("register.success"));
             close();
             getUI().ifPresent(ui -> ui.navigate("login"));
         });
@@ -80,5 +88,16 @@ public class RegisterOverlay extends Dialog {
         card.add(title, description, username, password, confirmPassword, register, cancel);
         card.setAlignItems(FlexComponent.Alignment.STRETCH);
         add(card);
+        updateTexts();
+    }
+
+    public void updateTexts() {
+        title.setText(getTranslation("register.title"));
+        description.setText(getTranslation("register.description"));
+        username.setLabel(getTranslation("register.field.username"));
+        password.setLabel(getTranslation("register.field.password"));
+        confirmPassword.setLabel(getTranslation("register.field.confirmPassword"));
+        register.setText(getTranslation("register.button"));
+        cancel.setText(getTranslation("register.toLogin"));
     }
 }

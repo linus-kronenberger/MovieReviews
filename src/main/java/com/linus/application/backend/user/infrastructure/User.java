@@ -2,14 +2,14 @@ package com.linus.application.backend.user.infrastructure;
 
 import jakarta.persistence.*;
 
-@Table(name = "users")
+@Table(name = "app_user")
 @Entity
 public class User {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "user_id")
-    private Long id;
+    private String id;
 
     @Column(name = "username", unique = true)
     private String username;
@@ -25,11 +25,11 @@ public class User {
     @Column(name = "role")
     private Role role;
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 

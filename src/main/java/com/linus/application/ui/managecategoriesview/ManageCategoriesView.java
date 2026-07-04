@@ -1,7 +1,7 @@
 package com.linus.application.ui.managecategoriesview;
 
-import com.linus.application.backend.rating.infrastructure.RatingCategory;
-import com.linus.application.backend.rating.infrastructure.RatingService;
+import com.linus.application.backend.rating.RatingCategory;
+import com.linus.application.backend.review.infrastructure.ReviewService;
 import com.linus.application.backend.user.infrastructure.User;
 import com.linus.application.security.AuthenticatedUser;
 import com.linus.application.ui.MainLayout;
@@ -12,41 +12,63 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.i18n.LocaleChangeEvent;
+import com.vaadin.flow.i18n.LocaleChangeObserver;
 import com.vaadin.flow.router.Route;
 import jakarta.annotation.security.RolesAllowed;
 
 @Route(value = "manage-categories", layout = MainLayout.class)
 @RolesAllowed({"USER", "ADMIN"})
-public class ManageCategoriesView extends VerticalLayout {
+public class ManageCategoriesView extends VerticalLayout implements LocaleChangeObserver {
 
-  private final RatingService ratingService;
+  private final ReviewService reviewService;
   private final AuthenticatedUser authenticatedUser;
 
-  private final TextField nameField = new TextField("Name");
-  private final TextField descriptionField = new TextField("Beschreibung");
+  private final H1 h1;
+  private final TextField nameField = new TextField();
+  private final TextField descriptionField = new TextField();
   private final Grid<RatingCategory> categoryGrid = new Grid<>();
+  private final Button saveButton;
   private final Button deleteButton;
 
-  public ManageCategoriesView(RatingService ratingService, AuthenticatedUser authenticatedUser) {
-    this.ratingService = ratingService;
+  public ManageCategoriesView(ReviewService reviewService, AuthenticatedUser authenticatedUser) {
+    this.reviewService = reviewService;
     this.authenticatedUser = authenticatedUser;
 
-    H1 h1 = new H1("Kategorien");
+    h1 = new H1();
 
     nameField.setWidthFull();
     descriptionField.setWidthFull();
 
     HorizontalLayout buttonLayout = new HorizontalLayout();
-    Button saveButton = new Button("Kategorie erstellen", event -> createCategory());
-    deleteButton = new Button("Ausgewählte löschen", event -> deleteSelected());
+    saveButton = new Button();
+    saveButton.addClickListener(event -> createCategory());
+    deleteButton = new Button();
+    deleteButton.addClickListener(event -> deleteSelected());
     deleteButton.setVisible(false);
     buttonLayout.add(saveButton, deleteButton);
-    categoryGrid.addColumn(RatingCategory::getCategory).setHeader("Name").setWidth("200px");
-    categoryGrid.addColumn(RatingCategory::getDescription).setHeader("Beschreibung").setWidth("400px");
+    categoryGrid.addColumn(RatingCategory::getCategory).setWidth("200px");
+    categoryGrid.addColumn(RatingCategory::getDescription).setWidth("400px");
     categoryGrid.addSelectionListener(_ -> onCategorySelected());
     refreshGrid();
 
     add(h1, nameField, descriptionField, buttonLayout, categoryGrid);
+    updateTexts();
+  }
+
+  @Override
+  public void localeChange(LocaleChangeEvent event) {
+    updateTexts();
+  }
+
+  private void updateTexts() {
+    h1.setText(getTranslation("categories.title"));
+    nameField.setLabel(getTranslation("categories.field.name"));
+    descriptionField.setLabel(getTranslation("categories.field.description"));
+    saveButton.setText(getTranslation("categories.create"));
+    deleteButton.setText(getTranslation("categories.delete"));
+    categoryGrid.getColumns().get(0).setHeader(getTranslation("categories.grid.name"));
+    categoryGrid.getColumns().get(1).setHeader(getTranslation("categories.grid.description"));
   }
 
   private void onCategorySelected() {
@@ -60,11 +82,11 @@ public class ManageCategoriesView extends VerticalLayout {
   private void createCategory() {
     String name = nameField.getValue();
     if (name == null || name.isBlank()) {
-      Notification.show("Bitte geben Sie einen Namen ein");
+      Notification.show(getTranslation("categories.error.nameRequired"));
       return;
     }
-    ratingService.createCategory(name, descriptionField.getValue());
-    Notification.show("Kategorie erstellt!");
+    reviewService.createCategory(name, descriptionField.getValue());
+    Notification.show(getTranslation("categories.created"));
     nameField.clear();
     descriptionField.clear();
     refreshGrid();
@@ -72,16 +94,16 @@ public class ManageCategoriesView extends VerticalLayout {
 
   private void deleteSelected() {
     for (RatingCategory category : categoryGrid.getSelectedItems()) {
-      ratingService.deleteCategory(category.getId());
+      reviewService.deleteCategory(category.getId());
     }
-    Notification.show("Kategorie(n) gelöscht");
+    Notification.show(getTranslation("categories.deleted"));
     refreshGrid();
   }
 
   private void refreshGrid() {
     User currentUser = authenticatedUser.get().orElse(null);
     if (currentUser != null) {
-      categoryGrid.setItems(ratingService.getCategoriesByUser(currentUser));
+      categoryGrid.setItems(reviewService.getCategoriesByUser(currentUser));
     }
   }
 }
