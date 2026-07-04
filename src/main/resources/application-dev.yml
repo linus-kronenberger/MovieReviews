@@ -24,6 +24,10 @@ spring:
         properties:
             hibernate:
                 format_sql: true
+spring:
+    flyway:
+        enabled: false
+
 vaadin:
     allowed-packages: com.vaadin,org.vaadin,dev.hilla,com.linus.application
     frontend:
