@@ -1,5 +1,6 @@
 package com.linus.application.backend;
 
+import com.linus.application.backend.friend.FriendService;
 import com.linus.application.backend.movie.infrastructure.MovieImportService;
 import com.linus.application.backend.rating.RatingCategory;
 import com.linus.application.backend.rating.RatingCategoryRepository;
@@ -48,6 +49,7 @@ public class DataInitializer {
         admin.setName("Admin");
         admin.setPasswordHash(hash);
         admin.setRole(Role.ADMIN);
+        admin.setFriendCode(FriendService.generateUniqueFriendCode(userRepository));
         admin = userRepository.save(admin);
 
         log.info("========================================");

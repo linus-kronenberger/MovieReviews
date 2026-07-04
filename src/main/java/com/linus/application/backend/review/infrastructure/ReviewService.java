@@ -2,16 +2,22 @@ package com.linus.application.backend.review.infrastructure;
 
 import com.linus.application.backend.essay.infrastructure.Essay;
 import com.linus.application.backend.essay.infrastructure.EssayRepository;
+import com.linus.application.backend.friend.FriendService;
 import com.linus.application.backend.movie.infrastructure.Movie;
 import com.linus.application.backend.rating.Rating;
 import com.linus.application.backend.rating.RatingCategory;
 import com.linus.application.backend.rating.RatingCategoryRepository;
+import com.linus.application.backend.rating.RatingRepository;
 import com.linus.application.backend.user.infrastructure.User;
 import com.linus.application.backend.user.domain.UserRetrievalService;
 import com.linus.application.security.AuthenticatedUser;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,17 +28,23 @@ public class ReviewService {
     private final ReviewRepository reviewRepository;
     private final EssayRepository essayRepository;
     private final RatingCategoryRepository ratingCategoryRepository;
+    private final RatingRepository ratingRepository;
     private final AuthenticatedUser authenticatedUser;
     private final UserRetrievalService userRetrievalService;
+    private final FriendService friendService;
 
     public ReviewService(ReviewRepository reviewRepository, EssayRepository essayRepository,
                          RatingCategoryRepository ratingCategoryRepository,
-                         AuthenticatedUser authenticatedUser, UserRetrievalService userRetrievalService) {
+                         RatingRepository ratingRepository,
+                         AuthenticatedUser authenticatedUser, UserRetrievalService userRetrievalService,
+                         FriendService friendService) {
         this.reviewRepository = reviewRepository;
         this.essayRepository = essayRepository;
         this.ratingCategoryRepository = ratingCategoryRepository;
+        this.ratingRepository = ratingRepository;
         this.authenticatedUser = authenticatedUser;
         this.userRetrievalService = userRetrievalService;
+        this.friendService = friendService;
     }
 
     @Transactional
@@ -42,6 +54,8 @@ public class ReviewService {
         review.setMovie(movie);
         review.setUser(currentUser);
 
+        reviewRepository.save(review);
+
         double starsSum = 0.0;
         int count = 0;
 
@@ -50,6 +64,7 @@ public class ReviewService {
             rating.setCategory(entry.getKey());
             rating.setStars(entry.getValue());
             rating.setReview(review);
+            ratingRepository.save(rating);
             starsSum += entry.getValue();
             count++;
         }
@@ -57,8 +72,6 @@ public class ReviewService {
         double avg = count > 0 ? starsSum / count : 0.0;
 
         review.setAverageRating(avg);
-
-
         reviewRepository.save(review);
 
         if (essayText != null && !essayText.isBlank()) {
@@ -72,6 +85,40 @@ public class ReviewService {
     @Transactional(readOnly = true)
     public List<Review> getRatingsByMovie(Movie movie) {
         return reviewRepository.findByMovie(movie);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Review> getRatingsByMovieForFriends(Movie movie) {
+        User currentUser = authenticatedUser.get().orElseThrow();
+        List<String> userIds = friendService.getFriendIds(currentUser);
+        userIds.add(currentUser.getId());
+        return reviewRepository.findByMovieAndUserIdIn(movie, userIds);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Review> getAllReviewsForUserAndFriends() {
+        User currentUser = authenticatedUser.get().orElseThrow();
+        List<User> users = new ArrayList<>(friendService.getFriends(currentUser));
+        users.add(currentUser);
+        return reviewRepository.findByUserIn(users);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Review> getTopReviews(User user, int limit) {
+        return reviewRepository.findByUserIn(List.of(user)).stream()
+                .sorted(Comparator.comparingDouble(Review::getAverageRating).reversed())
+                .limit(limit)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, Double> getRatingsBreakdown(Review review) {
+        List<Rating> ratings = ratingRepository.findByReviewIn(List.of(review));
+        Map<String, Double> breakdown = new HashMap<>();
+        for (Rating r : ratings) {
+            breakdown.put(r.getCategory().getCategory(), r.getStars());
+        }
+        return breakdown;
     }
 
     @Transactional(readOnly = true)
@@ -89,6 +136,7 @@ public class ReviewService {
 
             List<Essay> essays = essayRepository.findByReviewIn(List.of(review));
             essayRepository.deleteAll(essays);
+            ratingRepository.deleteByReviewIn(List.of(review));
             reviewRepository.delete(review);
         }
     }
@@ -128,6 +176,65 @@ public class ReviewService {
             adminCategories.addAll(userRatingCategories);
         });
         return adminCategories;
+    }
+
+    @Transactional(readOnly = true)
+    public List<RatingCategory> getCustomCategoriesForFriendsAndSelf() {
+        User currentUser = authenticatedUser.get().orElseThrow();
+        List<User> friends = friendService.getFriends(currentUser);
+
+        List<User> users = new ArrayList<>(friends);
+        users.add(currentUser);
+
+        List<RatingCategory> allCategories = ratingCategoryRepository.findByUserIn(users);
+
+        Set<String> adminUserIds = userRetrievalService.findAdminUsers()
+                .orElse(List.of())
+                .stream()
+                .map(User::getId)
+                .collect(Collectors.toSet());
+
+        return allCategories.stream()
+                .filter(cat -> !adminUserIds.contains(cat.getUser().getId()))
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public Map<String, double[]> getThreeAveragesForReviews(List<Review> reviews) {
+        List<Rating> allRatings = ratingRepository.findByReviewIn(reviews);
+        Set<String> adminCategoryIds = getAdminCategories().stream()
+                .map(RatingCategory::getId)
+                .collect(Collectors.toSet());
+
+        Map<String, List<Rating>> ratingsByReview = allRatings.stream()
+                .collect(Collectors.groupingBy(r -> r.getReview().getId()));
+
+        Map<String, double[]> result = new HashMap<>();
+        for (Review review : reviews) {
+            String reviewId = review.getId();
+            List<Rating> reviewRatings = ratingsByReview.getOrDefault(reviewId, List.of());
+
+            if (reviewRatings.isEmpty()) {
+                result.put(reviewId, new double[]{Double.NaN, Double.NaN, review.getAverageRating()});
+            } else {
+                double stdSum = 0, custSum = 0;
+                int stdCount = 0, custCount = 0;
+                for (Rating r : reviewRatings) {
+                    if (adminCategoryIds.contains(r.getCategory().getId())) {
+                        stdSum += r.getStars();
+                        stdCount++;
+                    } else {
+                        custSum += r.getStars();
+                        custCount++;
+                    }
+                }
+                double stdAvg = stdCount > 0 ? stdSum / stdCount : 0;
+                double custAvg = custCount > 0 ? custSum / custCount : 0;
+                double overallAvg = (stdCount + custCount) > 0 ? (stdSum + custSum) / (stdCount + custCount) : 0;
+                result.put(reviewId, new double[]{stdAvg, custAvg, overallAvg});
+            }
+        }
+        return result;
     }
 
     public boolean reviewForUserExists() {
