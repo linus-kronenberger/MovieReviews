@@ -2,16 +2,22 @@ package com.linus.application.backend.movie.infrastructure;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
+import com.linus.application.backend.rating.RatingRepository;
+import com.linus.application.backend.review.infrastructure.Review;
+import com.linus.application.backend.review.infrastructure.ReviewRepository;
+import com.linus.application.backend.user.infrastructure.Role;
+import com.linus.application.backend.user.infrastructure.User;
+import com.linus.application.security.AuthenticatedUser;
 import com.vaadin.flow.data.provider.QuerySortOrder;
 import com.vaadin.flow.data.provider.SortDirection;
 import jakarta.annotation.security.DeclareRoles;
 import jakarta.annotation.security.RolesAllowed;
-import jakarta.transaction.Transactional;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Slice;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -23,11 +29,19 @@ import java.util.stream.StreamSupport;
 @Service
 public class MovieService {
     private final MovieRepository movieRepository;
+    private final ReviewRepository reviewRepository;
+    private final RatingRepository ratingRepository;
+    private final AuthenticatedUser authenticatedUser;
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
 
-    public MovieService(MovieRepository movieRepository, ObjectMapper objectMapper) {
+    public MovieService(MovieRepository movieRepository, ReviewRepository reviewRepository,
+                        RatingRepository ratingRepository, AuthenticatedUser authenticatedUser,
+                        ObjectMapper objectMapper) {
         this.movieRepository = movieRepository;
+        this.reviewRepository = reviewRepository;
+        this.ratingRepository = ratingRepository;
+        this.authenticatedUser = authenticatedUser;
         this.objectMapper = objectMapper;
         this.httpClient = HttpClient.newHttpClient();
     }
@@ -53,6 +67,20 @@ public class MovieService {
         movie.setImdbId(imdbId);
         movie.setType(type);
         return movieRepository.save(movie);
+    }
+
+    @Transactional
+    public void deleteMovie(Movie movie) {
+        User currentUser = authenticatedUser.get().orElse(null);
+        if (currentUser == null || currentUser.getRole() != Role.ADMIN) {
+            throw new SecurityException("Only admins can delete movies");
+        }
+        List<Review> reviews = reviewRepository.findByMovie(movie);
+        if (!reviews.isEmpty()) {
+            ratingRepository.deleteByReviewIn(reviews);
+            reviewRepository.deleteAll(reviews);
+        }
+        movieRepository.delete(movie);
     }
 
     public String searchImdbId(String title) {
