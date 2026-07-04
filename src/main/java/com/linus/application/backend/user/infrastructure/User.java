@@ -17,6 +17,9 @@ public class User {
     @Column(name = "name")
     private String name;
 
+    @Column(name = "friend_code", unique = true, length = 8)
+    private String friendCode;
+
     
     @Column(name = "password_hash")
     private String passwordHash;
@@ -63,5 +66,13 @@ public class User {
 
     public void setRole(Role role) {
         this.role = role;
+    }
+
+    public String getFriendCode() {
+        return friendCode;
+    }
+
+    public void setFriendCode(String friendCode) {
+        this.friendCode = friendCode;
     }
 }
