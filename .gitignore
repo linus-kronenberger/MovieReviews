@@ -20,3 +20,6 @@ error-screenshots/
 webpack.generated.js
 
 .agents/skills
+
+# H2 file database
+data/
