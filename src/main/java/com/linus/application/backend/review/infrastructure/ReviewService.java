@@ -11,8 +11,11 @@ import com.linus.application.backend.user.infrastructure.UserRetrievalServiceImp
 import com.linus.application.security.AuthenticatedUser;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -132,5 +135,21 @@ public class ReviewService {
             adminCategories.addAll(userRatingCategories);
         });
         return adminCategories;
+    }
+
+    public boolean reviewForUserExists() {
+        return authenticatedUser.get()
+                .map(user -> reviewRepository.findByUser(user) != null)
+                .orElse(false);
+    }
+
+    public boolean reviewForUserExists(User user) {
+      return reviewRepository.findByUser(user) != null;
+    }
+
+    @Transactional
+    public void deleteReviewByUser() {
+        User  currentUser = authenticatedUser.get().orElseThrow();
+        reviewRepository.deleteByUser(currentUser);
     }
 }
