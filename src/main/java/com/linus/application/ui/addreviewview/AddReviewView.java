@@ -5,8 +5,11 @@ import com.linus.application.backend.movie.infrastructure.MovieService;
 import com.linus.application.backend.rating.RatingCategory;
 import com.linus.application.backend.review.infrastructure.Review;
 import com.linus.application.backend.review.infrastructure.ReviewService;
+import com.linus.application.backend.user.infrastructure.Role;
+import com.linus.application.backend.user.infrastructure.User;
 import com.linus.application.backend.user.infrastructure.UserRepository;
 import com.linus.application.security.AuthenticatedUser;
+import com.linus.application.ui.util.components.dialogs.ReviewOverrideDialog;
 import com.linus.application.ui.util.components.formulars.StarSlider;
 import com.linus.application.ui.util.components.notifications.SuccessNotification;
 import com.linus.application.ui.util.components.notifications.WarningNotification;
@@ -14,6 +17,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
 import com.vaadin.flow.component.combobox.ComboBox;
 
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.html.H1;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Paragraph;
@@ -51,6 +55,7 @@ public class AddReviewView extends VerticalLayout implements LocaleChangeObserve
     private final Button saveButton;
     private final Map<RatingCategory, Double> ratings;
     private boolean isLoading = false;
+    private boolean overrideConfirmed = false;
 
     public AddReviewView(MovieService movieService, ReviewService reviewService,
                          AuthenticatedUser authenticatedUser, UserRepository userRepository) {
@@ -108,42 +113,75 @@ public class AddReviewView extends VerticalLayout implements LocaleChangeObserve
         saveButton.addClickListener(event -> save());
 
         essayHeader = new H2();
-        add(essayHeader, essayArea);
+        Button customCategoriesButton = new Button(getTranslation("addrating.customCategoriesButton"));
+        customCategoriesButton.addClickListener(event -> {
+            Dialog customCategoriesDialog = new Dialog();
+            VerticalLayout customCategoriesLayout = new VerticalLayout();
+            User authUser = authenticatedUser.get().orElse(null);
+            if(authUser != null && authUser.getRole() != Role.ADMIN) {
+                List<RatingCategory> categories = reviewService.getCustomCategoriesForFriendsAndSelf();
+                for(RatingCategory category : categories) {
+                    StarSlider categorySlider = new StarSlider(category.getCategory());
+                    customCategoriesLayout.add(categorySlider);
+                }
+                customCategoriesDialog.add(customCategoriesLayout);
+                if(categories.size() > 0) {
+                    customCategoriesDialog.open();
+                }
+            }
+        });
+
+        add(customCategoriesButton, essayHeader, essayArea);
         add(saveButton);
 
         updateTexts();
+    }
+
+    private void loadReviewData(Review review) {
+        Map<RatingCategory, Double> savedRatings = reviewService.getDraftRatings(review);
+        for (Map.Entry<RatingCategory, Double> entry : savedRatings.entrySet()) {
+            ratings.put(entry.getKey(), entry.getValue());
+        }
+        for (StarSlider slider : starSliders) {
+            RatingCategory cat = sliderToCategory.get(slider);
+            Double val = savedRatings.get(cat);
+            slider.setValue(val != null ? val : 2.5);
+        }
+        String essayText = reviewService.getDraftEssay(review);
+        essayArea.setValue(essayText != null ? essayText : "");
+    }
+
+    private void resetForm() {
+        for (StarSlider slider : starSliders) {
+            RatingCategory cat = sliderToCategory.get(slider);
+            ratings.put(cat, 2.5);
+            slider.setValue(2.5);
+        }
+        essayArea.clear();
     }
 
     private void onMovieSelected(Movie movie) {
         if (movie == null) return;
 
         isLoading = true;
+        overrideConfirmed = false;
 
-        Optional<Review> existingReview = reviewService.findDraftByMovie(movie);
-        if (existingReview.isPresent()) {
-            Review review = existingReview.get();
-            Map<RatingCategory, Double> savedRatings = reviewService.getDraftRatings(review);
-            for (Map.Entry<RatingCategory, Double> entry : savedRatings.entrySet()) {
-                ratings.put(entry.getKey(), entry.getValue());
-            }
-            for (StarSlider slider : starSliders) {
-                RatingCategory cat = sliderToCategory.get(slider);
-                Double val = savedRatings.get(cat);
-                if (val != null) {
-                    slider.setValue(val);
-                } else {
-                    slider.setValue(2.5);
-                }
-            }
-            String essayText = reviewService.getDraftEssay(review);
-            essayArea.setValue(essayText != null ? essayText : "");
+        Optional<Review> anyReview = reviewService.findAnyReviewByMovie(movie);
+        if (anyReview.isPresent() && !anyReview.get().isDraft()) {
+            ReviewOverrideDialog dialog = new ReviewOverrideDialog(
+                    () -> {
+                        overrideConfirmed = true;
+                        loadReviewData(anyReview.get());
+                    },
+                    this::resetForm
+            );
+            dialog.open();
+        } else if (anyReview.isPresent()) {
+            overrideConfirmed = true;
+            loadReviewData(anyReview.get());
         } else {
-            for (StarSlider slider : starSliders) {
-                RatingCategory cat = sliderToCategory.get(slider);
-                ratings.put(cat, 2.5);
-                slider.setValue(2.5);
-            }
-            essayArea.clear();
+            overrideConfirmed = true;
+            resetForm();
         }
 
         isLoading = false;
@@ -165,6 +203,23 @@ public class AddReviewView extends VerticalLayout implements LocaleChangeObserve
     private void autoSaveDraft() {
         Movie movie = movieCombo.getValue();
         if (movie == null) return;
+
+        if (!overrideConfirmed) {
+            Optional<Review> existing = reviewService.findAnyReviewByMovie(movie);
+            if (existing.isPresent() && !existing.get().isDraft()) {
+                ReviewOverrideDialog dialog = new ReviewOverrideDialog(
+                        () -> {
+                            overrideConfirmed = true;
+                            reviewService.saveDraft(movie, ratings, essayArea.getValue());
+                        },
+                        () -> {}
+                );
+                dialog.open();
+                return;
+            }
+            overrideConfirmed = true;
+        }
+
         reviewService.saveDraft(movie, ratings, essayArea.getValue());
     }
 

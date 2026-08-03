@@ -1,3 +1,5 @@
+ALTER TABLE review ADD COLUMN IF NOT EXISTS is_draft BOOLEAN NOT NULL DEFAULT TRUE;
+
 ALTER TABLE app_user ADD COLUMN friend_code VARCHAR(8);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_app_user_friend_code ON app_user(friend_code);
 

@@ -8,9 +8,7 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Paragraph;
-import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.i18n.LocaleChangeEvent;
 import com.vaadin.flow.i18n.LocaleChangeObserver;
 import com.vaadin.flow.router.HasDynamicTitle;
@@ -26,9 +24,9 @@ public class FriendCodeView extends VerticalLayout implements LocaleChangeObserv
     private final FriendService friendService;
     private final AuthenticatedUser authenticatedUser;
     private final H2 title;
-    private final TextField friendCodeField;
-    private final Button sendButton;
-    private final Paragraph info;
+    private final H2 profileTitle;
+    private final Paragraph usernameField;
+    private final Button addFriendButton;
     private final Grid<User> friendsGrid;
     private final Grid<FriendRequest> requestsGrid;
 
@@ -40,14 +38,14 @@ public class FriendCodeView extends VerticalLayout implements LocaleChangeObserv
         setSpacing(true);
 
         title = new H2();
-        info = new Paragraph();
+        profileTitle = new H2();
+        usernameField = new Paragraph();
 
-        friendCodeField = new TextField();
-        friendCodeField.setMaxLength(8);
-        friendCodeField.setWidth("300px");
-
-        sendButton = new Button();
-        sendButton.addClickListener(e -> sendFriendRequest());
+        addFriendButton = new Button();
+        addFriendButton.addClickListener(e -> {
+            FriendCodeDialog dialog = new FriendCodeDialog(friendService, authenticatedUser, this::refreshData);
+            dialog.open();
+        });
 
         friendsGrid = new Grid<>(User.class, false);
         friendsGrid.addColumn(User::getUsername).setAutoWidth(true);
@@ -57,25 +55,16 @@ public class FriendCodeView extends VerticalLayout implements LocaleChangeObserv
         requestsGrid.addColumn(r -> r.getFromUser().getUsername()).setAutoWidth(true);
         requestsGrid.setAllRowsVisible(true);
 
-        add(title, info, friendCodeField, sendButton);
+        add(title);
+        add(profileTitle);
+        add(usernameField);
+        add(addFriendButton);
         add(new Paragraph(getTranslation("friend.friends")));
         add(friendsGrid);
         add(new Paragraph(getTranslation("friend.requests")));
         add(requestsGrid);
 
         updateTexts();
-        refreshData();
-    }
-
-    private void sendFriendRequest() {
-        String code = friendCodeField.getValue();
-        if (code == null || code.isBlank()) {
-            Notification.show(getTranslation("friend.error.codeRequired"));
-            return;
-        }
-        String result = friendService.sendFriendRequest(code.toUpperCase());
-        Notification.show(getTranslation(result));
-        friendCodeField.clear();
         refreshData();
     }
 
@@ -97,9 +86,12 @@ public class FriendCodeView extends VerticalLayout implements LocaleChangeObserv
 
     private void updateTexts() {
         title.setText(getTranslation("friend.title"));
-        info.setText(getTranslation("friend.info"));
-        friendCodeField.setLabel(getTranslation("friend.codeLabel"));
-        sendButton.setText(getTranslation("friend.send"));
+        profileTitle.setText(getTranslation("friend.profileTitle"));
+        addFriendButton.setText(getTranslation("friend.addFriend"));
+        User user = authenticatedUser.get().orElse(null);
+        if (user != null) {
+            usernameField.setText(getTranslation("friend.username") + ": " + user.getUsername());
+        }
         if (!friendsGrid.getColumns().isEmpty()) {
             friendsGrid.getColumns().get(0).setHeader(getTranslation("friend.friends"));
         }

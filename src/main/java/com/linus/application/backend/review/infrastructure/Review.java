@@ -8,7 +8,7 @@ import jakarta.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
 
-@Table(name = "review")
+@Table(name = "review", uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "movie_id"}))
 @Entity
 public class Review {
     @Id

@@ -10,4 +10,6 @@ import java.util.List;
 public interface RatingRepository extends CrudRepository<Rating, String> {
     void deleteByReviewIn(List<Review> reviews);
     List<Rating> findByReviewIn(List<Review> reviews);
+    List<Rating> findByCategoryIn(List<RatingCategory> categories);
+    List<Rating> findByCategory(RatingCategory category);
 }

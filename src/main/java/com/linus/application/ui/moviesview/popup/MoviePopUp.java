@@ -3,13 +3,18 @@ package com.linus.application.ui.moviesview.popup;
 import com.linus.application.backend.essay.infrastructure.Essay;
 import com.linus.application.backend.movie.infrastructure.Movie;
 import com.linus.application.backend.movie.infrastructure.MovieService;
+import com.linus.application.backend.rating.RatingCategory;
 import com.linus.application.backend.review.infrastructure.Review;
 import com.linus.application.backend.review.infrastructure.ReviewService;
 import com.linus.application.backend.user.infrastructure.Role;
 import com.linus.application.security.AuthenticatedUser;
+import com.linus.application.ui.util.components.dialogs.ReviewOverrideDialog;
+import com.linus.application.ui.util.components.formulars.StarSlider;
+import com.linus.application.ui.util.components.notifications.SuccessNotification;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid;
+import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Image;
 import com.vaadin.flow.component.html.Paragraph;
 import com.vaadin.flow.component.notification.Notification;
@@ -17,12 +22,17 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextArea;
+import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.i18n.LocaleChangeEvent;
 import com.vaadin.flow.i18n.LocaleChangeObserver;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class MoviePopUp extends Dialog implements LocaleChangeObserver {
@@ -30,21 +40,32 @@ public class MoviePopUp extends Dialog implements LocaleChangeObserver {
     private final Movie movie;
     private final ReviewService reviewService;
     private final MovieService movieService;
+    private final AuthenticatedUser authenticatedUser;
     private final VerticalLayout contentLayout = new VerticalLayout();
     private Button deleteButton;
     private Button closeButton;
     private Button deleteMovieButton;
     private Grid<Review> ratingGrid;
     private final Runnable onMovieDeleted;
+    private final List<StarSlider> starSliders = new ArrayList<>();
+    private final Map<StarSlider, RatingCategory> sliderToCategory = new HashMap<>();
+    private final Map<RatingCategory, Double> ratings = new HashMap<>();
+    private final TextArea essayArea = new TextArea();
+    private boolean isLoading = false;
+    private boolean overrideConfirmed = false;
+    private H2 ratingHeader;
+    private H2 essayHeader;
+    private Button publishButton;
 
     public MoviePopUp(Movie movie, ReviewService reviewService, MovieService movieService,
                       AuthenticatedUser authenticatedUser, Runnable onMovieDeleted) {
         this.movie = movie;
         this.reviewService = reviewService;
         this.movieService = movieService;
+        this.authenticatedUser = authenticatedUser;
         this.onMovieDeleted = onMovieDeleted;
 
-        setWidth("650px");
+        setWidth("750px");
 
         contentLayout.setPadding(false);
         add(contentLayout);
@@ -72,6 +93,46 @@ public class MoviePopUp extends Dialog implements LocaleChangeObserver {
         posterLayout.setFlexGrow(1, descriptionArea);
 
         contentLayout.add(posterLayout);
+
+        ratingHeader = new H2();
+        contentLayout.add(ratingHeader);
+
+        VerticalLayout adminRatingsLayout = new VerticalLayout();
+        List<RatingCategory> adminCategories = reviewService.getAdminCategories();
+        adminCategories.forEach(adminCategory -> {
+            StarSlider slider = new StarSlider(adminCategory.getCategory());
+            slider.setValue(2.5);
+            slider.addValueChangeListener(event -> {
+                if (!isLoading) {
+                    ratings.put(adminCategory, slider.getValue());
+                    autoSaveDraft();
+                }
+            });
+            starSliders.add(slider);
+            sliderToCategory.put(slider, adminCategory);
+            adminRatingsLayout.add(slider);
+            ratings.put(adminCategory, 2.5);
+        });
+        contentLayout.add(adminRatingsLayout);
+
+        essayHeader = new H2();
+        contentLayout.add(essayHeader);
+
+        essayArea.setWidthFull();
+        essayArea.setValueChangeMode(ValueChangeMode.TIMEOUT);
+        essayArea.setValueChangeTimeout(500);
+        essayArea.addValueChangeListener(event -> {
+            if (!isLoading) {
+                autoSaveDraft();
+            }
+        });
+        contentLayout.add(essayArea);
+
+        publishButton = new Button();
+        publishButton.addClickListener(event -> publish());
+        contentLayout.add(publishButton);
+
+        loadDraft();
 
         refreshGrid();
 
@@ -108,6 +169,73 @@ public class MoviePopUp extends Dialog implements LocaleChangeObserver {
         updateTexts();
     }
 
+    private void autoSaveDraft() {
+        if (!overrideConfirmed) {
+            Optional<Review> existing = reviewService.findAnyReviewByMovie(movie);
+            if (existing.isPresent() && !existing.get().isDraft()) {
+                ReviewOverrideDialog dialog = new ReviewOverrideDialog(
+                        () -> {
+                            overrideConfirmed = true;
+                            reviewService.saveDraft(movie, ratings, essayArea.getValue());
+                        },
+                        () -> {}
+                );
+                dialog.open();
+                return;
+            }
+            overrideConfirmed = true;
+        }
+
+        reviewService.saveDraft(movie, ratings, essayArea.getValue());
+    }
+
+    private void publish() {
+        autoSaveDraft();
+        reviewService.publishReview(movie);
+        overrideConfirmed = false;
+        SuccessNotification notification = new SuccessNotification(getTranslation("movies.popup.published"));
+        notification.open();
+        refreshGrid();
+    }
+
+    private void loadReviewData(Review review) {
+        Map<RatingCategory, Double> savedRatings = reviewService.getDraftRatings(review);
+        for (Map.Entry<RatingCategory, Double> entry : savedRatings.entrySet()) {
+            ratings.put(entry.getKey(), entry.getValue());
+        }
+        for (StarSlider slider : starSliders) {
+            RatingCategory cat = sliderToCategory.get(slider);
+            Double val = savedRatings.get(cat);
+            slider.setValue(val != null ? val : 2.5);
+        }
+        String essayText = reviewService.getDraftEssay(review);
+        essayArea.setValue(essayText != null ? essayText : "");
+    }
+
+    private void loadDraft() {
+        isLoading = true;
+        overrideConfirmed = false;
+
+        Optional<Review> anyReview = reviewService.findAnyReviewByMovie(movie);
+        if (anyReview.isPresent() && !anyReview.get().isDraft()) {
+            ReviewOverrideDialog dialog = new ReviewOverrideDialog(
+                    () -> {
+                        overrideConfirmed = true;
+                        loadReviewData(anyReview.get());
+                    },
+                    () -> {}
+            );
+            dialog.open();
+        } else if (anyReview.isPresent()) {
+            overrideConfirmed = true;
+            loadReviewData(anyReview.get());
+        } else {
+            overrideConfirmed = true;
+        }
+
+        isLoading = false;
+    }
+
     @Override
     public void localeChange(LocaleChangeEvent event) {
         updateTexts();
@@ -117,6 +245,13 @@ public class MoviePopUp extends Dialog implements LocaleChangeObserver {
     private void updateTexts() {
         String typeLabel = movie.getType() != null ? movie.getType().getDisplayName() : "";
         setHeaderTitle(movie.getTitle() + (typeLabel.isEmpty() ? "" : " (" + typeLabel + ")"));
+        if (ratingHeader != null) {
+            ratingHeader.setText(getTranslation("movies.popup.ratingHeader"));
+        }
+        if (essayHeader != null) {
+            essayHeader.setText(getTranslation("movies.popup.essayHeader"));
+        }
+        publishButton.setText(getTranslation("movies.popup.publish"));
         deleteButton.setText(getTranslation("movies.popup.delete"));
         closeButton.setText(getTranslation("movies.popup.close"));
         if (deleteMovieButton != null) {
@@ -149,7 +284,7 @@ public class MoviePopUp extends Dialog implements LocaleChangeObserver {
             ratingGrid = null;
         } else {
             ratingGrid = new Grid<>(Review.class, false);
-            ratingGrid.addItemClickListener(_->onRatingClicked());
+            ratingGrid.addItemClickListener(_ -> onRatingClicked());
             ratingGrid.setItems(reviews);
             ratingGrid.addColumn(r -> r.getUser().getUsername()).setHeader(getTranslation("movies.popup.grid.user")).setWidth("90px");
             ratingGrid.addColumn(r -> formatAvg(threeAverages, r.getId(), 0)).setHeader(getTranslation("movies.popup.grid.standardRating")).setWidth("90px");
@@ -168,11 +303,10 @@ public class MoviePopUp extends Dialog implements LocaleChangeObserver {
     }
 
     private void onRatingClicked() {
-        if(ratingGrid.getSelectedItems().isEmpty()) {
+        if (ratingGrid.getSelectedItems().isEmpty()) {
             deleteButton.setVisible(false);
         } else {
             deleteButton.setVisible(true);
         }
-
     }
 }

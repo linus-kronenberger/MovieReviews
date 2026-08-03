@@ -18,6 +18,9 @@ public interface ReviewRepository extends CrudRepository<Review, String> {
     @Query("SELECT r FROM Review r WHERE r.movie = :movie AND r.user = :user")
     Optional<Review> findByUserAndMovie(@Param("user") User user, @Param("movie") Movie movie);
 
+    @Query("SELECT r FROM Review r WHERE r.movie = :movie AND r.user = :user AND r.isDraft = true")
+    Optional<Review> findDraftByUserAndMovie(@Param("user") User user, @Param("movie") Movie movie);
+
     @Query("SELECT r FROM Review r JOIN FETCH r.user WHERE r.movie = :movie")
     List<Review> findByMovie(@Param("movie") Movie movie);
 

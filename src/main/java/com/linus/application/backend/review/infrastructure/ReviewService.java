@@ -112,6 +112,13 @@ public class ReviewService {
     public Optional<Review> findDraftByMovie(Movie movie) {
         User currentUser = authenticatedUser.get().orElse(null);
         if (currentUser == null) return Optional.empty();
+        return reviewRepository.findDraftByUserAndMovie(currentUser, movie);
+    }
+
+    @Transactional(readOnly = true)
+    public Optional<Review> findAnyReviewByMovie(Movie movie) {
+        User currentUser = authenticatedUser.get().orElse(null);
+        if (currentUser == null) return Optional.empty();
         return reviewRepository.findByUserAndMovie(currentUser, movie);
     }
 
@@ -215,33 +222,32 @@ public class ReviewService {
         if (category == null) return;
         if (!category.getUser().getId().equals(currentUser.getId())) return;
 
+        List<Rating> ratingsToDelete = ratingRepository.findByCategoryIn(List.of(category));
+
+        List<Review> affectedReviews = ratingsToDelete.stream()
+                .map(Rating::getReview)
+                .distinct()
+                .toList();
+
+        ratingRepository.deleteAll(ratingsToDelete);
         ratingCategoryRepository.delete(category);
-    }
 
-    @Transactional(readOnly = true)
-    public List<RatingCategory> getCustomCategoriesForFriendsAndSelf() {
-        User currentUser = authenticatedUser.get().orElseThrow();
-        List<User> friends = friendService.getFriends(currentUser);
-
-        List<User> users = new ArrayList<>(friends);
-        users.add(currentUser);
-
-        List<RatingCategory> allCategories = ratingCategoryRepository.findByUserIn(users);
-
-        Set<String> adminUserIds = userRetrievalService.findAdminUsers()
-                .orElse(List.of())
-                .stream()
-                .map(User::getId)
-                .collect(Collectors.toSet());
-
-        return allCategories.stream()
-                .filter(cat -> !adminUserIds.contains(cat.getUser().getId()))
-                .collect(Collectors.toList());
+        for (Review review : affectedReviews) {
+            List<Rating> remainingRatings = ratingRepository.findByReviewIn(List.of(review));
+            double sum = 0.0;
+            int count = 0;
+            for (Rating r : remainingRatings) {
+                sum += r.getStars();
+                count++;
+            }
+            review.setAverageRating(count > 0 ? sum / count : 0.0);
+            reviewRepository.save(review);
+        }
     }
 
     public List<RatingCategory> getAdminCategories() {
         List<RatingCategory> adminCategories = new ArrayList<>();
-        List<User> adminUsers = userRetrievalService.findAdminUsers().orElseThrow(RuntimeException::new);
+        List<User> adminUsers = userRetrievalService.findAdminUsers().orElse(List.of());
         adminUsers.forEach(u -> {
             List<RatingCategory> userRatingCategories = ratingCategoryRepository.findByUser(u);
             adminCategories.addAll(userRatingCategories);
