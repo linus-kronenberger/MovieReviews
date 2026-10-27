@@ -11,19 +11,18 @@ VM_IP="$1"
 VM_USER="${2:-$USER}"
 
 echo "Deploying to $VM_USER@$VM_IP ..."
-ssh "$VM_USER@$VM_IP" "
-  cd ~/MovieReviews
-  if [ ! -d .git ]; then
+ssh "$VM_USER@$VM_IP" 'bash -s' <<'DEPLOY'
+  set -eu
+  if [ ! -d ~/MovieReviews/.git ]; then
     echo 'Repo not found on VM — cloning ...'
-    cd ~
-    git clone git@gitlab.com:LinusK4566/MovieReviews.git
-    cd ~/MovieReviews
-  else
-    git pull
+    git clone https://github.com/linus-kronenberger/MovieReviews.git ~/MovieReviews
   fi
-  docker compose down --remove-orphans
-  docker compose up --build -d
-  docker image prune -f
-"
+  cd ~/MovieReviews
+  git remote set-url origin https://github.com/linus-kronenberger/MovieReviews.git
+  test -z "$(git status --porcelain --untracked-files=no)"
+  git switch master
+  git pull --ff-only origin master
+  docker compose up --build -d --remove-orphans
+DEPLOY
 
 echo "Done. App should be reachable at http://$VM_IP:8080"

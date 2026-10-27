@@ -1,6 +1,7 @@
 .git
 .gitignore
-.gitlab-ci.yml
+.github
+.env*
 .dockerignore
 .gitpod*
 .vscode
