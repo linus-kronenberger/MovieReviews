@@ -1,28 +1,87 @@
-name: Deploy to VM
+name: CI and Deploy
 
 on:
   push:
-    branches: [master]
+  pull_request:
   workflow_dispatch:
 
-jobs:
-  deploy:
-    name: Deploy
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
+permissions:
+  contents: read
 
+jobs:
+  build:
+    name: Build and test
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1
+      - name: Set up JDK
+        uses: actions/setup-java@v5
         with:
-          host: ${{ secrets.VM_HOST }}
-          username: ${{ secrets.VM_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd ~/MovieReviews
-            git pull
-            docker compose up --build -d
-            docker image prune -f
+          java-version: '25'
+          distribution: temurin
+          cache: maven
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+
+      - name: Build and test production package
+        run: ./mvnw --batch-mode --no-transfer-progress verify -Dvaadin.productionMode=true
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: test-reports
+          path: target/surefire-reports/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  deploy:
+    name: Deploy
+    needs: build
+    if: github.ref == 'refs/heads/master' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+    steps:
+      - name: Deploy via SSH
+        env:
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_USER: ${{ secrets.VM_USER }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+          DEPLOY_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          : "${VM_HOST:?Missing VM_HOST}"
+          : "${VM_USER:?Missing VM_USER}"
+          : "${SSH_PRIVATE_KEY:?Missing SSH_PRIVATE_KEY}"
+          : "${SSH_KNOWN_HOSTS:?Missing SSH_KNOWN_HOSTS}"
+          [[ "$DEPLOY_SHA" =~ ^[0-9a-f]{40}$ ]]
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes "$VM_USER@$VM_HOST" "bash -s -- $DEPLOY_SHA" <<'DEPLOY'
+          set -euo pipefail
+          if [ ! -d "$HOME/MovieReviews/.git" ]; then
+            git clone https://github.com/linus-kronenberger/MovieReviews.git "$HOME/MovieReviews"
+          fi
+          cd "$HOME/MovieReviews"
+          git remote set-url origin https://github.com/linus-kronenberger/MovieReviews.git
+          git fetch origin master
+          if [ "$(git rev-parse origin/master)" != "$1" ]; then
+            echo 'Skipping deployment: master has a newer commit.'
+            exit 0
+          fi
+          test -z "$(git status --porcelain --untracked-files=no)"
+          git checkout --detach "$1"
+          docker compose up --build -d --remove-orphans
+          DEPLOY

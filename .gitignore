@@ -1,4 +1,6 @@
 /target/
+.env*
+!.env.example
 .idea/
 .vscode/
 .settings
@@ -23,3 +25,4 @@ webpack.generated.js
 
 # H2 file database
 data/
+/.opencode/
